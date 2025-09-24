@@ -1,0 +1,899 @@
+/* ========================================================
+   KarenFlix — HOME (CSS único y depurado)
+   Incluye: Nav + Icons + Search + Hamburguesa + Géneros (dropdown)
+            Panel lateral móvil + Scrim
+            Hero Carousel (portada) con controles y dots
+            Responsive limpio (sin duplicados)
+   ======================================================== */
+
+/* ---------- Variables ---------- */
+:root {
+    /* Layout */
+    --kf-h: 8vh;
+    --kf-padX: 5vw;
+    --kf-gap: 42px;
+    --bp: 768px;
+
+    /* Colores y bordes */
+    --kf-text: #fff;
+    --kf-accent: #e50914;
+    --kf-bg: rgba(0, 0, 0, 0.08);
+    --kf-bg-solid: rgba(0, 0, 0, 0.72);
+    --kf-border: rgba(255, 255, 255, 0.14);
+
+    /* Nav */
+    --nav-h: 64px;
+    --icon-size: 28px;
+    --burger-w: 38px;
+    --nav-right-gap: 12px;
+    --search-w: min(220px, 48vw);
+
+    /* Hero */
+    --hero-h: min(86vh, 760px);
+    --hero-pad: clamp(16px, 4vw, 64px);
+    --hero-text: #fff;
+    --hero-radius: 16px;
+}
+
+body {
+    margin: 0;
+    font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #000;
+    color: var(--kf-text);
+}
+
+/* Empuja el contenido bajo el nav fijo (el hero luego se compensa) */
+main {
+    padding-top: var(--nav-h);
+}
+
+/* ========================================================
+   NAV KarenFlix  |  Logo | Menú | Iconos | Hamburguesa
+   Estados: .overlay (encima del hero) / .solid (con scroll)
+   ======================================================== */
+.home-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: var(--nav-h);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    /* logo | menú | iconos | burger */
+    align-items: center;
+    padding: 0 var(--kf-padX);
+    color: var(--kf-text);
+    background: transparent;
+}
+
+.home-nav.overlay {
+    background: linear-gradient(180deg, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .05) 100%);
+}
+
+.home-nav.solid {
+    background: var(--kf-bg-solid);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+/* Logo */
+.brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.brand img {
+    height: calc(var(--nav-h) * 0.62);
+    width: auto;
+    display: block;
+}
+
+/* Menú (desktop) */
+.main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--kf-gap);
+}
+
+.item {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    opacity: .9;
+    transition: opacity .2s;
+}
+
+.item:hover,
+.item[aria-current="page"] {
+    opacity: 1;
+}
+
+/* --- Géneros (dropdown) --- */
+.genres {
+    position: relative;
+}
+
+#genreBtn.genres-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 700;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+#genreBtn .caret {
+    width: .6rem;
+    height: .6rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform .2s;
+    opacity: .9;
+}
+
+#genreBtn[aria-expanded="true"] .caret {
+    transform: rotate(-135deg);
+}
+
+#genreMenu.menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 280px;
+    max-height: 60vh;
+    overflow: auto;
+    padding: 12px;
+    background: rgxba(20, 20, 20, .96);
+    border: 1px solid var(--kf-border);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .45);
+    z-index: 1200;
+}
+
+#genreMenu[hidden] {
+    display: none;
+}
+
+#genreMenu button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+#genreMenu button:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+/* --- Iconos derecha (lupa + cuenta) --- */
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    justify-self: end;
+}
+
+.icon-btn {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    opacity: .9;
+}
+
+.icon-btn:hover {
+    opacity: 1;
+}
+
+.icon-btn .icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, .5));
+}
+
+.icon-btn.round:hover {
+    background: rgba(255, 255, 255, .08);
+    border-radius: 50%;
+}
+
+/* --- Hamburguesa --- */
+.hamburger {
+    display: none;
+    justify-self: end;
+    width: var(--burger-w);
+    height: 28px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.hamburger .line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 3px;
+    background: #fff;
+    transition: transform .3s ease, opacity .2s ease;
+}
+
+.hamburger .line:nth-child(1) {
+    top: 0;
+}
+
+.hamburger .line:nth-child(2) {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.hamburger .line:nth-child(3) {
+    bottom: 0;
+}
+
+.hamburger.active .line:nth-child(1) {
+    transform: rotate(45deg) translateY(10px);
+}
+
+.hamburger.active .line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active .line:nth-child(3) {
+    transform: rotate(-45deg) translateY(-10px);
+}
+
+/* --- Barra de búsqueda --- */
+.nav-search {
+    position: absolute;
+    right: calc(var(--kf-padX) + var(--burger-w) + var(--nav-right-gap));
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: width .25s ease, opacity .2s ease;
+    z-index: 1001;
+}
+
+.nav-search.open {
+    width: var(--search-w);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.nav-search input {
+    width: 100%;
+    height: 36px;
+    padding: 0 40px 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .35);
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    outline: none;
+}
+
+.nav-search button {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 28px;
+    min-width: 28px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    cursor: pointer;
+}
+
+.nav-search button:hover {
+    background: rgba(255, 255, 255, .2);
+}
+
+.home-nav.search-open .nav-icons {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* ========================================================
+   PANEL LATERAL MÓVIL + SCRIM
+   ======================================================== */
+.scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+    z-index: 1098;
+}
+
+.scrim[hidden] {
+    display: none !important;
+}
+
+.panel {
+    position: fixed;
+    inset: 0 0 0 28%;
+    transform: translateX(100%);
+    background: rgba(10, 10, 10, .98);
+    backdrop-filter: blur(1.6vh);
+    transition: transform .24s ease;
+    z-index: 1099;
+
+    display: flex;
+    flex-direction: column;
+    padding: 2vh 3vw;
+}
+
+.panel.open {
+    transform: translateX(0);
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2vh;
+}
+
+.panel-logo {
+    height: 3.8vh;
+    width: auto;
+}
+
+.panel-close {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: #fff;
+    font-size: 2.6vh;
+    cursor: pointer;
+}
+
+.panel-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+}
+
+.panel-nav a,
+.panel-nav button {
+    color: #fff;
+    text-decoration: none;
+    font-size: 2.2vh;
+    padding: 1.2vh 0;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.panel-nav .group-title {
+    opacity: .7;
+    font-size: 1.8vh;
+    margin-top: 1.6vh;
+}
+
+/* ========================================================
+   HERO CAROUSEL (portada)
+   ======================================================== */
+.hero-carousel {
+    height: var(--hero-h);
+    overflow: hidden;
+    background: #000;
+    isolation: isolate;
+    margin-top: calc(-1 * var(--nav-h));
+    border-radius: var(--hero-radius);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.hero-track {
+    height: 100%;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    transition: transform .6s ease;
+    will-change: transform;
+}
+
+.hero-slide {
+    position: relative;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(130% 100% at 0% 50%, rgba(0, 0, 0, .70), transparent 60%),
+        linear-gradient(0deg, rgba(0, 0, 0, .30), rgba(0, 0, 0, .30));
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .05) 60%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: grid;
+    align-content: center;
+    gap: 14px;
+    padding: var(--hero-pad);
+    max-width: min(780px, 92vw);
+    color: var(--hero-text);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+
+.hero-year {
+    opacity: .85;
+    font-weight: 600;
+}
+
+.hero-title {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.hero-meta {
+    opacity: .95;
+    font-weight: 600;
+}
+
+.hero-desc {
+    opacity: .9;
+    max-width: 65ch;
+}
+
+.hero-carousel :where(.btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.hero-carousel :where(.btn-primary) {
+    background: var(--kf-accent);
+    color: #fff;
+    border: 0;
+}
+
+.hero-carousel :where(.btn-primary:hover) {
+    filter: brightness(1.12);
+}
+
+.hero-carousel :where(.btn-ghost) {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .55);
+    background: transparent;
+}
+
+.hero-carousel :where(.btn-ghost:hover) {
+    border-color: #fff;
+    background: rgba(255, 255, 255, .08);
+}
+
+.hero-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(0, 0, 0, .45);
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    z-index: 2;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.hero-nav:hover {
+    background: rgba(0, 0, 0, .65);
+}
+
+.hero-nav:active {
+    transform: translateY(-50%) scale(.96);
+}
+
+.hero-nav.prev {
+    left: 10px;
+}
+
+.hero-nav.next {
+    right: 10px;
+}
+
+.hero-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translate(-50%, 0);
+    display: flex;
+    gap: 12px;
+    z-index: 2;
+}
+
+.hero-dots button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(255, 255, 255, .45);
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+}
+
+.hero-dots button[aria-selected="true"] {
+    background: var(--kf-accent);
+    transform: scale(1.05);
+}
+/* =======================================================
+   ROWS / TARJETAS — tamaño fijo, imágenes consistentes
+   ======================================================= */
+:root{
+  /* tamaño base de tarjeta (desktop) */
+  --card-w: 180px;
+  --card-ratio: 2 / 3;   /* posters típicos: 300x450 -> 2:3 */
+  --card-radius: 12px;
+  --feat-h: min(70vh, 720px);
+}
+
+/* Fila horizontal */
+.row{ margin: 40px 0; }
+.row-title{ color:#fff; margin:0 0 14px 20px; font-weight:700; }
+.row-inner{ position:relative; }
+
+/* Pista: no permite que el contenido cambie la altura */
+.row-track{
+  display:flex;
+  gap:18px;
+  align-items:flex-start;        /* evita estirar tarjetas */
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+}
+.row-track::-webkit-scrollbar{ display:none; }
+
+/* Tarjeta con ancho fijo */
+.card{
+  flex: 0 0 var(--card-w);
+  width: var(--card-w);
+  color:#fff;
+}
+
+/* Contenedor del poster con alto fijo por relación de aspecto */
+.card__poster{
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--card-ratio);     /* alto = ancho * (3/2) */
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  background:#111;                     /* fondo por si tarda en cargar */
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+}
+
+/* La imagen nunca cambia las dimensiones del contenedor */
+.card__poster > img{
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;          /* recorta sin deformar */
+  object-position: center;    /* ajusta si quieres top/center/bottom */
+}
+
+/* Texto: alturas coherentes y corte a 2 líneas */
+.card__title{
+  margin: 10px 4px 2px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card__meta{
+  margin: 0 4px;
+  font-size: 12px;
+  opacity: .75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scroll-snap para que las tarjetas “encajen” al soltar */
+.row-track{ scroll-snap-type: x mandatory; }
+.card{ scroll-snap-align: start; }
+/* (opcional) resalta la tarjeta activa del destacado */
+.card.is-active{ outline: 2px solid rgba(229,9,20,.75); outline-offset: 2px; border-radius: 12px; }
+
+/* Flechas */
+.row-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; border-radius:50%; border:0;
+  background: rgba(0,0,0,.5); color:#fff; cursor:pointer; z-index:2;
+}
+.row-nav:hover{ background: rgba(0,0,0,.7); }
+.row-nav.prev{ left:0; }
+.row-nav.next{ right:0; }
+
+/* Tamaños alternos por fila (opcional) */
+.row.is-sm   { --card-w: 150px; }
+.row.is-lg   { --card-w: 220px; }
+.row.is-hero { --card-w: 260px; } 
+
+
+/* para la sección destacada si quieres más grande */
+.featured-carousel{
+  position: relative;
+  height: var(--feat-h);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 60px 0;
+  color: #fff;
+  isolation: isolate;
+}
+/* Asegura el contexto de posicionamiento */
+.featured-strip{
+  position: relative;     /* imprescindible para posicionar las flechas dentro */
+  z-index: 2;             /* por encima del fondo */
+}
+
+/* Flechas del featured SIEMPRE visibles y arriba de la tira */
+.featured-strip .row-nav{
+  position: absolute;
+  bottom: 14px;           /* pegadas a la base del carrusel */
+  top: auto;              /* anula el top:50% de estilos globales */
+  transform: none;        /* anula translateY */
+  right: 10px;            /* por defecto la NEXT va a la derecha */
+  z-index: 5;             /* encima de la row-track */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
+}
+.featured-strip .row-nav:hover{
+  background: rgba(0,0,0,.75);
+}
+
+/* La PREV se corre un poco a la izquierda de la NEXT */
+.featured-strip .row-nav.prev{ right: 64px; }
+
+/* Por si algún estilo global las oculta */
+.featured-strip .row-nav{ opacity: 1; visibility: visible; }
+
+/* Fondo con crossfade */
+.featured-bg{ position:absolute; inset:0; z-index:0; }
+.featured-bg__img{
+  position:absolute; inset:0;
+  background-size: cover; background-position: center;
+  transition: opacity .55s ease;
+  opacity: 0;
+}
+.featured-bg__img.is-a{ opacity: 1; }       /* arrancamos mostrando A */
+.featured-bg__veil{
+  position:absolute; inset:0;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,.20) 55%, rgba(0,0,0,.0) 80%),
+    linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.30));
+}
+
+/* Grid de contenido */
+.featured-grid{
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(280px, 560px) 1fr; /* izquierda | derecha */
+  gap: clamp(16px, 3vw, 40px);
+  align-items: center;
+  height: 100%;
+  padding: clamp(16px, 3vw, 40px);
+}
+
+/* Columna izquierda */
+.f-suptitle{ font-weight: 700; opacity: .95; margin: 0 0 6px; }
+.f-sub{ opacity: .85; margin: 0 0 18px; }
+.f-year{ opacity: .85; font-weight: 600; margin: 8px 0 0; }
+.f-title{ font-size: clamp(24px, 4.6vw, 42px); line-height: 1.1; margin: 8px 0 8px; font-weight: 800; }
+.f-meta{ opacity: .95; font-weight: 600; margin: 0 0 10px; }
+.f-desc{
+  opacity: .92; margin: 0 0 16px;
+  max-width: 60ch;
+}
+
+/* Reutiliza tus botones del hero */
+.f-actions .btn{ margin-right: 10px; }
+
+/* Columna derecha: tira de posters (usa tu sistema de tarjetas) */
+.featured-strip{ position: relative; }
+.featured-strip .row-track{
+  display: flex; gap: 20px;
+  overflow-x: auto; scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 12px 10px;
+}
+.featured-strip .row-track::-webkit-scrollbar{ display: none; }
+
+/* Tamaño fijo de tarjetas (reutiliza tus variables de cards) */
+.featured-strip .card{ flex: 0 0 var(--card-w); width: var(--card-w); }
+.featured-strip .card__poster{ aspect-ratio: var(--card-ratio); border-radius: var(--card-radius); overflow: hidden; }
+.featured-strip .card__poster img{ width:100%; height:100%; object-fit:cover; display:block; }
+.featured-strip .card.is-active{ outline: 2px solid rgba(229,9,20,.9); outline-offset: 4px; border-radius: 14px; }
+
+/* Flechas (reutiliza estilos de .row-nav si ya los tienes) */
+.featured-strip .row-nav{ position:absolute; bottom: 10px; transform:none; top:auto; }
+.featured-strip .row-nav.prev{ right: 64px; }
+.featured-strip .row-nav.next{ right: 10px; }
+
+/* ===== Botones SOLO para #featured (series más populares) ===== */
+#featured .f-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-top: 12px;
+}
+
+#featured .btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 9px 14px;              /* un poco más compacto que el hero */
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter .15s ease, transform .12s ease, background .15s ease, border-color .15s ease;
+}
+
+/* Primario: “Ver Ahora” */
+#featured .btn-primary{
+  background: var(--kf-accent);
+  color:#fff;
+  border:0;
+  box-shadow: 0 6px 18px rgba(229, 9, 20, .35);
+}
+#featured .btn-primary:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+#featured .btn-primary:active{ transform: translateY(0); }
+
+/* Secundario: “Reseñar” */
+#featured .btn-ghost{
+  color:#fff;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.55);
+}
+#featured .btn-ghost:hover{
+  background: rgba(255,255,255,.12);
+  border-color: #fff;
+}
+#featured .btn-ghost:active{ transform: translateY(0); }
+
+/* En pantallas pequeñas, aún más compactos */
+@media (max-width: 600px){
+  #featured .btn{ padding: 8px 12px; font-size: 13px; }
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .featured-grid{
+    grid-template-columns: 1fr;      /* apila: info arriba, strip abajo */
+    align-content: start;
+  }
+  .featured-carousel{ height: auto; min-height: 520px; }
+  .featured-strip .row-nav{ bottom: 6px; }
+}
+
+
+/* Responsive */
+@media (max-width: 900px){
+  :root{ --card-w: 160px; }
+}
+@media (max-width: 600px){
+  :root{ --card-w: 140px; }
+}
+
+/* ========================================================
+   RESPONSIVE
+   ======================================================== */
+@media (max-width: 1024px) {
+    :root {
+        --kf-gap: 3vw;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --kf-h: 9svh;
+        --kf-padX: 4vw;
+        --kf-gap: 4vw;
+        --hero-h: min(70vh, 600px);
+    }
+
+    .main {
+        display: none;
+    }
+
+    .nav-icons {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-grid;
+    }
+
+    .hero-desc {
+        display: none;
+    }
+
+    .hero-nav {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 520px) {
+    :root {
+        --hero-h: min(64vh, 560px);
+    }
+
+    .brand img {
+        height: 4.6vh;
+    }
+
+    .hero-title {
+        font-size: clamp(26px, 8vw, 40px);
+    }
+
+    .hero-dots {
+        gap: 10px;
+        bottom: 14px;
+    }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+    .hero-track {
+        transition: none;
+    }
+}

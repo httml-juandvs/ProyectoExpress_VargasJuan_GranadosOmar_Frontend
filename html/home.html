@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KarenFlix — Home</title>
+
+    <!-- Poppins -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="../styles/home.css" />
+</head>
+
+<body>
+    <!-- NAV Home (overlay sobre el hero) -->
+    <header class="home-nav overlay">
+        <!-- Logo -->
+        <a id="brandLink" href="./home.html" class="brand" aria-label="KarenFlix — Inicio">
+            <img src="../storage/KarenFlix.png" alt="KarenFlix" />
+        </a>
+
+        <!-- Menú desktop -->
+        <nav class="main" aria-label="Secciones">
+            <a class="item" href="./home.html" aria-current="page">Inicio</a>
+            <a class="item" href="#series">Series</a>
+            <a class="item" href="#peliculas">Películas</a>
+            <a class="item" href="#top">Top</a>
+            <a class="item" href="#ranking">Ranking</a>
+
+            <!-- Dropdown de Géneros (con IDs que usa el JS) -->
+            <div class="genres">
+                <button id="genreBtn" class="genres-btn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <span id="genreLabel" class="genreLabel">Géneros</span>
+                    <span class="caret" aria-hidden="true"></span>
+                </button>
+                <div id="genreMenu" class="menu" hidden></div>
+            </div>
+        </nav>
+
+        <!-- Iconos (lupa + cuenta) -->
+        <div class="nav-icons">
+            <button class="icon-btn" id="searchBtn" aria-label="Buscar">
+                <img class="icon" src="../storage/carbon_search.png" width="28" height="28" alt="">
+            </button>
+            <a class="icon-btn round" href="./account.html" aria-label="Cuenta">
+                <img class="icon" src="../storage/codicon_account.png" width="28" height="28" alt="">
+            </a>
+        </div>
+
+        <!-- Barra de búsqueda (se expande al tocar la lupa) -->
+        <form id="navSearch" class="nav-search" role="search" aria-hidden="true">
+            <input id="searchInput" type="search" name="q" placeholder="Buscar títulos, géneros..." autocomplete="off"
+                inputmode="search" />
+            <button id="searchSubmit" type="submit" aria-label="Buscar">↵</button>
+        </form>
+
+        <!-- Hamburguesa pegada a la derecha -->
+        <button id="hamburgerBtn" type="button" class="hamburger" aria-label="Abrir menú" aria-controls="panel"
+            aria-expanded="false">
+            <span class="line"></span><span class="line"></span><span class="line"></span>
+        </button>
+    </header>
+
+    <!-- Scrim + Panel móvil (se abre con la hamburguesa) -->
+    <div id="scrim" class="scrim" hidden></div>
+    <aside id="panel" class="panel" aria-label="Menú" aria-hidden="true">
+        <div class="panel-head">
+            <img src="../storage/KarenFlix.png" alt="KarenFlix" class="panel-logo" />
+            <button id="closePanel" class="panel-close" type="button" aria-label="Cerrar">✕</button>
+        </div>
+        <nav id="navPanel" class="panel-nav" aria-label="Secciones móviles">
+            <!-- Se rellena por JS con los mismos links + géneros -->
+        </nav>
+    </aside>
+
+    <!-- Contenido -->
+    <main id="main">
+        <!-- Hero carrusel arriba -->
+        <section id="hero" class="hero-carousel" aria-label="Destacados"></section>
+
+        <!-- Últimos lanzamientos Tarjetas -->
+
+        <section class="row">
+            <h2 class="row-title">Últimos lanzamientos</h2>
+            <div class="row-inner">
+                <button class="row-nav prev">❮</button>
+                <div class="row-track">
+                    <article class="card">
+                        <div class="card__poster">
+                            <img src="../storage/poster2.jpg" alt="Deadpool & Wolverine" width="300" height="450"
+                                loading="lazy">
+                        </div>
+                        <h3 class="card__title">Deadpool & Wolverine</h3>
+                        <p class="card__meta">Acción • Sci-Fi</p>
+                    </article>
+                    <!-- más .card ... -->
+                </div>
+                <button class="row-nav next">❯</button>
+            </div>
+        </section>
+
+        <!-- Películas y Series Populares Tarjetas -->
+
+        <section class="row">
+            <h2 class="row-title">Películas y Series Populares</h2>
+            <div class="row-inner">
+                <button class="row-nav prev">❮</button>
+                <div class="row-track">
+                    <article class="card">
+                        <div class="card__poster">
+                            <img src="../storage/poster2.jpg" alt="Deadpool & Wolverine" width="300" height="450"
+                                loading="lazy">
+                        </div>
+                        <h3 class="card__title">Deadpool & Wolverine</h3>
+                        <p class="card__meta">Acción • Sci-Fi</p>
+                    </article>
+                    <!-- más .card ... -->
+                </div>
+                <button class="row-nav next">❯</button>
+            </div>
+        </section>
+        <!-- Series mas vistas Tarjetas -->
+        <section id="featured" class="featured-carousel" aria-label="Series más populares">
+            <!-- Fondo dinámico con crossfade -->
+            <div class="featured-bg">
+                <div class="featured-bg__img is-a"></div>
+                <div class="featured-bg__img is-b"></div>
+                <div class="featured-bg__veil"></div>
+            </div>
+
+            <div class="featured-grid">
+                <!-- Columna izquierda: info -->
+                <div class="featured-info">
+                    <p class="f-suptitle">Las 10 series más Populares en Colombia</p>
+                    <p class="f-sub">Mira las Series más vistas de este mes.</p>
+
+                    <p class="f-year" id="fYear"></p>
+                    <h2 class="f-title" id="fTitle"></h2>
+                    <p class="f-meta" id="fMeta"></p>
+                    <p class="f-desc" id="fDesc"></p>
+
+                    <div class="f-actions">
+                        <a id="fPlay" class="btn btn-primary" href="#" target="_blank">▶Ver Trailer</a>
+                        <a id="fReview" class="btn btn-ghost" href="#">Reseñar</a>
+                    </div>
+                </div>
+
+                <!-- Columna derecha: carrusel de posters -->
+                <div class="featured-strip row-inner">
+                    <button class="row-nav prev" aria-label="Anterior">❮</button>
+                    <div class="row-track" id="fTrack"></div>
+                    <button class="row-nav next" aria-label="Siguiente">❯</button>
+                </div>
+            </div>
+        </section>
+        <!-- Películas  Tarjetas -->
+
+        <section class="row">
+            <h2 class="row-title">Películas </h2>
+            <div class="row-inner">
+                <button class="row-nav prev">❮</button>
+                <div class="row-track">
+                    <article class="card">
+                        <div class="card__poster">
+                            <img src="../storage/poster2.jpg" alt="Deadpool & Wolverine" width="300" height="450"
+                                loading="lazy">
+                        </div>
+                        <h3 class="card__title">Deadpool & Wolverine</h3>
+                        <p class="card__meta">Acción • Sci-Fi</p>
+                    </article>
+                    <!-- más .card ... -->
+                </div>
+                <button class="row-nav next">❯</button>
+            </div>
+            <!--  Series  Tarjetas -->
+
+        <section class="row">
+            <h2 class="row-title">Series </h2>
+            <div class="row-inner">
+                <button class="row-nav prev">❮</button>
+                <div class="row-track">
+                    <article class="card">
+                        <div class="card__poster">
+                            <img src="../storage/poster2.jpg" alt="Deadpool & Wolverine" width="300" height="450"
+                                loading="lazy">
+                        </div>
+                        <h3 class="card__title">Deadpool & Wolverine</h3>
+                        <p class="card__meta">Acción • Sci-Fi</p>
+                    </article>
+                    <!-- más .card ... -->
+                </div>
+                <button class="row-nav next">❯</button>
+            </div>
+        </section>
+        </section>
+    </main>
+
+    <script src="../scripts/home.js" defer></script>
+</body>
+
+</html>
