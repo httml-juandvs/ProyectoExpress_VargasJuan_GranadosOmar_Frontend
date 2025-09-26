@@ -1,34 +1,8 @@
 const API_BASE = "http://localhost:3000/api/v1";
 
-/* =============== Modal helpers =============== */
-function openModal(item) {
-  const modal   = document.querySelector("#detailModal");
-  const backdrop = modal.querySelector(".modal-backdrop");
-  const title   = modal.querySelector("#modalTitle");
-  const meta    = modal.querySelector("#modalMeta");
-  const rating  = modal.querySelector("#modalRating");
-  const desc    = modal.querySelector("#modalDesc");
-
-  // Fondo del modal
-  backdrop.style.backgroundImage = `url(${item.backdrop || item.poster || "../storage/poster2.jpg"})`;
-
-  // Info
-  title.textContent  = item.title_es || item.title || item.name || "Sin título";
-  meta.textContent   = (item.genres || []).join(" • ");
-  desc.textContent   = item.overview || "Sin descripción.";
-  rating.innerHTML   = renderStars(item.vote_average || 0);
-
-  modal.removeAttribute("hidden");
-
-  // Cerrar con la X, clic fuera o Escape
-  modal.querySelector(".modal-close").onclick = () => closeModal();
-  modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-  document.addEventListener("keydown", escClose);
-}
-
 function closeModal() {
   const modal = document.querySelector("#detailModal");
-  if (!modal) return;
+  if (!modal) return; 
   modal.setAttribute("hidden", "");
   document.removeEventListener("keydown", escClose);
 }
@@ -60,14 +34,26 @@ function renderCards(container, items) {
       <p class="card__meta">${(it.genres || []).join(" • ")}</p>
     `;
 
-    // click abre modal
-    card.addEventListener("click", () => {
+    // ➕ Guarda datos en data-* (los clones conservarán esto)
+    card.dataset.titleEs = it.title_es || "";
+    card.dataset.title    = it.title || "";
+    card.dataset.name     = it.name || "";
+    card.dataset.poster   = it.poster || "";
+    card.dataset.backdrop = it.backdrop || "";
+    card.dataset.overview = it.overview || "";
+    card.dataset.vote     = String(it.vote_average || 0);
+    card.dataset.genres   = (it.genres || []).join("|");
+
+    // click en el original (por si ves originales, no clones)
+    card.addEventListener("click", (ev) => {
+      ev.stopPropagation();                 // evita duplicado con la delegación
       openModal(it);
     });
 
     container.appendChild(card);
   });
 }
+
 
 // ---------- Hero dinámico (3 aleatorias) ----------
 function renderHero(container, items) {
@@ -158,6 +144,26 @@ function initRow(section) {
   const prev  = section.querySelector(".row-nav.prev");
   const next  = section.querySelector(".row-nav.next");
   if (!track) return;
+
+    if (!track._modalDelegated) {
+    track.addEventListener("click", (e) => {
+      const card = e.target.closest(".card");
+      if (!card || !track.contains(card)) return;
+
+      const item = {
+        title_es: card.dataset.titleEs || undefined,
+        title: card.dataset.title || undefined,
+        name: card.dataset.name || undefined,
+        poster: card.dataset.poster || undefined,
+        backdrop: card.dataset.backdrop || undefined,
+        overview: card.dataset.overview || undefined,
+        vote_average: Number(card.dataset.vote || 0),
+        genres: card.dataset.genres ? card.dataset.genres.split("|") : []
+      };
+      openModal(item);
+    });
+    track._modalDelegated = true; // evita duplicar el listener
+  }
 
   const original = [...track.children];
   if (!original.length) return;
@@ -322,6 +328,338 @@ function initNavSearchToggle() {
     if (!inside) closeSearch();
   });
 }
+
+/* ================= Config ================= */
+// <- ajusta a tu backend
+const REVIEWS_PATH = "/resenas";    // p.ej. "/reseñas" en tu server, aquí sin ñ para URL
+
+/* =============== Auth helpers =============== */
+function getAuth() {
+  // Adapta a tu login real. Ejemplo: guarda { token, user: {id, name, isAdmin} }
+  try { return JSON.parse(localStorage.getItem("auth")) || null; }
+  catch { return null; }
+}
+function authHeaders() {
+  const a = getAuth();
+  return a?.token ? { "Authorization": `Bearer ${a.token}` } : {};
+}
+
+/* =============== Open / Close Modal =============== */
+function openModal(item) {
+  const modal    = document.querySelector("#detailModal");
+  const backdrop = modal.querySelector(".modal-backdrop");
+  const title    = modal.querySelector("#modalTitle");
+  const meta     = modal.querySelector("#modalMeta");
+  const rating   = modal.querySelector("#modalRating");
+  const desc     = modal.querySelector("#modalDesc");
+  const posterEl = modal.querySelector("#modalPoster");
+
+  // Fondo y texto
+  backdrop.style.backgroundImage = `url(${item.backdrop || item.poster || "../storage/poster2.jpg"})`;
+  const displayTitle = item.title_es || item.title || item.name || "Sin título";
+  title.textContent  = displayTitle;
+  meta.textContent   = (item.genres || []).join(" • ");
+  desc.textContent   = item.overview || "Sin descripción.";
+  rating.innerHTML   = renderStars(item.vote_average || 0);
+
+  // Póster
+  posterEl.src = item.poster || "../storage/poster2.jpg";
+  posterEl.alt = `Póster de ${displayTitle}`;
+
+  // Guardar id del item en la sección de reseñas
+  //const reviewsSection = modal.querySelector("#reviewsSection");
+  //reviewsSection.dataset.itemId = item.id || item._id || item.tmdb_id || displayTitle;
+
+  // Preparar UI reseñas
+  //setupReviewsUI(modal);
+
+  // Mostrar modal
+  modal.removeAttribute("hidden");
+  modal.querySelector(".modal-close").onclick = () => closeModal();
+  modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+  document.addEventListener("keydown", escClose);
+}
+
+function closeModal() {
+  const modal = document.querySelector("#detailModal");
+  if (!modal || modal.hasAttribute("hidden")) return;
+
+  // Limpia listeners de reseñas para evitar duplicados
+  //teardownReviewsUI(modal);
+
+  modal.setAttribute("hidden", "");
+  document.removeEventListener("keydown", escClose);
+}
+function escClose(e) {
+  if (e.key === "Escape") closeModal();
+}
+
+/* =============== Reseñas: UI y lógica =============== 
+let ratingCurrent = 0;
+
+function setupReviewsUI(modalRoot) {
+  const auth = getAuth();
+  const reviewsSection = modalRoot.querySelector("#reviewsSection");
+  const ratingStars = modalRoot.querySelector("#ratingStars");
+  const reviewForm  = modalRoot.querySelector("#reviewForm");
+  const reviewText  = modalRoot.querySelector("#reviewText");
+  const reviewIdInp = modalRoot.querySelector("#reviewId");
+  const submitBtn   = modalRoot.querySelector("#reviewSubmitBtn");
+  const cancelBtn   = modalRoot.querySelector("#reviewCancelBtn");
+  const statusHint  = modalRoot.querySelector("#reviewStatusHint");
+  const reviewsList = modalRoot.querySelector("#reviewsList");
+
+  // Si no hay login, deshabilita form
+  if (!auth) {
+    reviewText.disabled = true;
+    submitBtn.disabled = true;
+    statusHint.textContent = "Inicia sesión para escribir una reseña.";
+  } else {
+    reviewText.disabled = false;
+    submitBtn.disabled = false;
+    statusHint.textContent = "";
+  }
+
+  // Estrellas: click handler
+  function onStarClick(e) {
+    const btn = e.target.closest("button[data-score]");
+    if (!btn) return;
+    ratingCurrent = Number(btn.dataset.score) || 0;
+    [...ratingStars.querySelectorAll("button")].forEach(b => {
+      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
+    });
+  }
+  ratingStars.addEventListener("click", onStarClick);
+  ratingStars._handler = onStarClick; // para teardown
+
+  // Submit (crear/editar)
+  async function onSubmit(e) {
+    e.preventDefault();
+    if (!auth) return;
+
+    const itemId = reviewsSection.dataset.itemId;
+    const text = reviewText.value.trim();
+    if (!ratingCurrent || !text) {
+      statusHint.textContent = "Calificación y texto son obligatorios.";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusHint.textContent = "Enviando…";
+
+    const body = {
+      itemId,
+      rating: ratingCurrent,
+      text
+    };
+
+    const isEdit = !!reviewIdInp.value;
+    const url = isEdit
+      ? `${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(reviewIdInp.value)}`
+      : `${API_BASE}${REVIEWS_PATH}`;
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders()
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Limpia form y re-carga
+      reviewIdInp.value = "";
+      cancelBtn.hidden = true;
+      submitBtn.textContent = "Enviar reseña";
+      statusHint.textContent = "¡Reseña enviada para aprobación!";
+      ratingCurrent = 0;
+      [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
+      reviewText.value = "";
+      await loadReviews(itemId, reviewsList);
+    } catch (err) {
+      statusHint.textContent = "Error al enviar la reseña.";
+      console.error(err);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+  reviewForm.addEventListener("submit", onSubmit);
+  reviewForm._submitHandler = onSubmit;
+
+  // Cancelar edición
+  function onCancelEdit() {
+    reviewIdInp.value = "";
+    cancelBtn.hidden = true;
+    submitBtn.textContent = "Enviar reseña";
+    reviewText.value = "";
+    ratingCurrent = 0;
+    [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
+    statusHint.textContent = "";
+  }
+  cancelBtn.addEventListener("click", onCancelEdit);
+  cancelBtn._handler = onCancelEdit;
+
+  // Cargar reseñas visibles + de usuario
+  const itemId = reviewsSection.dataset.itemId;
+  loadReviews(itemId, reviewsList, { onEdit, onDelete });
+
+  // Handlers para botones de cada tarjeta
+  function onEdit(review) {
+    // Solo permitir si es del usuario
+    const auth = getAuth();
+    if (!auth || auth.user?.id !== review.userId) return;
+
+    // Prefill
+    reviewIdInp.value = review.id;
+    reviewText.value = review.text || "";
+    ratingCurrent = Number(review.rating) || 0;
+    [...ratingStars.querySelectorAll("button")].forEach(b => {
+      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
+    });
+    cancelBtn.hidden = false;
+    submitBtn.textContent = "Guardar cambios";
+    statusHint.textContent = review.status !== "approved"
+      ? "Tu reseña está pendiente de aprobación."
+      : "";
+  }
+
+  async function onDelete(review) {
+    const auth = getAuth();
+    if (!auth || auth.user?.id !== review.userId) return;
+    if (!confirm("¿Eliminar tu reseña?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(review.id)}`, {
+        method: "DELETE",
+        headers: { ...authHeaders() }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadReviews(itemId, reviewsList, { onEdit, onDelete });
+      // Si estabas editando esa misma reseña, resetea form
+      if (document.querySelector("#reviewId").value === review.id) {
+        cancelBtn.click();
+      }
+    } catch (err) {
+      alert("Error eliminando la reseña.");
+      console.error(err);
+    }
+  }
+}
+
+function teardownReviewsUI(modalRoot) {
+  const ratingStars = modalRoot.querySelector("#ratingStars");
+  const reviewForm  = modalRoot.querySelector("#reviewForm");
+  const cancelBtn   = modalRoot.querySelector("#reviewCancelBtn");
+
+  if (ratingStars?._handler) {
+    ratingStars.removeEventListener("click", ratingStars._handler);
+    delete ratingStars._handler;
+  }
+  if (reviewForm?._submitHandler) {
+    reviewForm.removeEventListener("submit", reviewForm._submitHandler);
+    delete reviewForm._submitHandler;
+  }
+  if (cancelBtn?._handler) {
+    cancelBtn.removeEventListener("click", cancelBtn._handler);
+    delete cancelBtn._handler;
+  }
+}
+
+/* =============== Carga / Render de reseñas =============== 
+async function loadReviews(itemId, listEl, handlers = {}) {
+  const auth = getAuth();
+  const isAdmin = !!auth?.user?.isAdmin;
+
+  try {
+    const res = await fetch(`${API_BASE}${REVIEWS_PATH}?itemId=${encodeURIComponent(itemId)}`, {
+      headers: { "Accept": "application/json", ...authHeaders() }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const all = await res.json(); // [{id,userId,userName,rating,text,status,createdAt},...]
+
+    // 1) Las aprobadas se muestran siempre
+    const approved = all.filter(r => r.status === "approved");
+
+    // 2) Si el usuario tiene una reseña pendiente/rechazada, también la ve (con badge)
+    const mineExtra = auth ? all.filter(r => r.userId === auth.user.id && r.status !== "approved") : [];
+
+    // 3) Si es admin y estás en este UI, podría ver todas, pero:
+    //    Mantendremos la vista pública + las suyas. El módulo admin aprueba.
+    const visible = approved.concat(mineExtra)
+      // quitar duplicados si el mismo id aparece en ambos arrays
+      .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
+      // ordenar por fecha desc si viene createdAt
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    renderReviews(listEl, visible, handlers, auth);
+  } catch (err) {
+    console.error(err);
+    listEl.innerHTML = `<li class="muted">No se pudieron cargar las reseñas.</li>`;
+  }
+}
+
+function renderReviews(listEl, reviews, { onEdit, onDelete }, auth) {
+  if (!reviews?.length) {
+    listEl.innerHTML = `<li class="muted">Sé el primero en reseñar.</li>`;
+    return;
+  }
+
+  listEl.innerHTML = "";
+  for (const r of reviews) {
+    const li = document.createElement("li");
+    li.className = "review-card";
+    li.innerHTML = `
+      <div class="review-card__head">
+        <span class="review-card__user">${escapeHtml(r.userName || "Usuario")}</span>
+        <span class="review-card__rating">${"★".repeat(r.rating || 0)}${"☆".repeat(Math.max(0, 5 - (r.rating || 0)))}</span>
+      </div>
+      <p class="review-card__text">${escapeHtml(r.text || "")}</p>
+      ${renderStatusBadge(r.status)}
+      <div class="review-card__actions">
+        ${auth && auth.user?.id === r.userId ? `
+          <button class="link" data-action="edit">Editar</button>
+          <button class="link" data-action="delete">Eliminar</button>
+        ` : ``}
+      </div>
+    `;
+
+    if (auth && auth.user?.id === r.userId) {
+      const editBtn = li.querySelector('[data-action="edit"]');
+      const delBtn  = li.querySelector('[data-action="delete"]');
+      editBtn?.addEventListener("click", () => onEdit?.(r));
+      delBtn?.addEventListener("click", () => onDelete?.(r));
+    }
+
+    listEl.appendChild(li);
+  }
+}
+
+function renderStatusBadge(status) {
+  if (!status || status === "approved") return "";
+  const map = {
+    pending:  { cls: "badge badge--pending",  text: "Pendiente de aprobación" },
+    rejected: { cls: "badge badge--rejected", text: "Rechazada" }
+  };
+  const v = map[status] || map.pending;
+  return `<span class="${v.cls}">${v.text}</span>`;
+}
+
+/* =============== Utilidades =============== */
+function renderStars(v) {
+  const n = Math.round(Number(v) / 2); // si vienes en /10 convierto a /5; ajusta si ya viene /5
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+
 
 /* =============== Inicializar todo =============== */
 document.addEventListener("DOMContentLoaded", () => {
