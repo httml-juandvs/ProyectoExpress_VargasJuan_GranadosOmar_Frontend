@@ -117,10 +117,12 @@
   regConfirm?.addEventListener("input", () => vConf(regPassword, regConfirm));
   regTerms?.addEventListener("change", () => vTerms(regTerms));
 
-  // ---------- Submit: Registro ----------
-  const API_BASE     = localStorage.getItem("KARENFLIX_API") || "http://localhost:3000/api/v1";
-  const REGISTER_URL = `${API_BASE}/auth/register`;
+  // ---------- API ----------
+  const API_BASE      = localStorage.getItem("KARENFLIX_API") || "http://localhost:3000/api/v1";
+  const REGISTER_URL  = `${API_BASE}/auth/register`;
+  const LOGIN_URL     = `${API_BASE}/auth/login`;
 
+  // ---------- Submit: Registro ----------
   registerForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     setFormAlert("");
@@ -168,15 +170,49 @@
     }
   });
 
-  // ---------- Submit: Login (placeholder para que no truene) ----------
+  // ---------- Submit: Login ----------
   const loginEmail    = $("#loginEmail");
   const loginPassword = $("#loginPassword");
 
   loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    // TODO: Implementar cuando tengas tu endpoint /auth/login
-    // const LOGIN_URL = `${API_BASE}/auth/login`;
-    // ...
-    console.log("Login submit (pendiente de implementar)");
+    setFormAlert(""); // limpiar mensajes
+
+    const email = loginEmail.value.trim().toLowerCase();
+    const password = loginPassword.value.trim();
+
+    if (!email || !password) {
+      setFormAlert("Debes ingresar correo y contraseña.");
+      return;
+    }
+
+    const btnLogin = loginForm.querySelector("button[type=submit]");
+    lockButton(btnLogin, true, "Ingresando…");
+    try {
+      const res = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user || {}));
+
+        setFormAlert("Bienvenido 👋", "success");
+
+        setTimeout(() => {
+          window.location.href = "./home.html";
+        }, 800);
+      } else {
+        setFormAlert(data?.msg || data?.message || "Credenciales inválidas.");
+      }
+    } catch (err) {
+      console.error("Error de login:", err);
+      setFormAlert("Error de red o servidor no disponible.");
+    } finally {
+      lockButton(btnLogin, false);
+    }
   });
 })();
