@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="../storage/kasita.webp">
+  <link rel="icon" type="image/x-icon" href="../storage/kasita.webp">
   <title>KarenFlix — Home</title>
   <link rel="stylesheet" href="../styles/home.css" />
 </head>
@@ -42,9 +42,9 @@
       </form>
 
       <!-- Cuenta -->
-      <a class="icon-btn round" href="./account.html" aria-label="Cuenta">
+      <button class="icon-btn round" id="accountBtn" aria-label="Cuenta">
         <img class="icon" src="../storage/codicon_account.png" width="28" height="28" alt="">
-      </a>
+      </button>
     </div>
   </header>
 
@@ -109,12 +109,6 @@
     </section>
   </main>
 
-  <!-- Modal de detalle -->
-  <div id="detailModal" class="modal" hidden>
-    <div class="modal-content">
-      <button class="modal-close" aria-label="Cerrar">✕</button>
-      <div class="modal-backdrop"></div>
-
       <div class="modal-body">
         <!-- Columna imagen -->
         <aside class="modal-media">
@@ -163,7 +157,23 @@
       </div>
     </div>
   </div>
+<!-- Modal de cuenta -->
+<div id="accountModal" class="modal" hidden>
+  <div class="modal-content">
+    <button class="modal-close" id="closeAccountModal" aria-label="Cerrar">✕</button>
+    <div class="modal-backdrop"></div>
 
+    <div class="modal-body">
+      <h2>Mi cuenta</h2>
+      <ul class="account-options">
+        <li><button class="btn" id="accountEmailBtn">Correo</button></li>
+        <li><button class="btn" id="accountPasswordBtn">Contraseña</button></li>
+        <li><button class="btn" id="supportBtn">Soporte</button></li>
+        <li><button class="btn" id="logoutBtn">Cerrar sesión</button></li>
+      </ul>
+    </div>
+  </div>
+</div>
   <script src="../scripts/home.js" defer></script>
 </body>
 
