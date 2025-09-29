@@ -440,14 +440,55 @@ main {
     font-size: clamp(22px, 7vw, 36px);
   }
 }
+/* Like / Dislike */
+.like-dislike {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.like-dislike button {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #fff;
+  font-size: 18px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform .15s ease, filter .2s ease;
+}
+
+.like-dislike button:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+.like-dislike button.active {
+  background: #e50914;
+  border-color: #ff0000;
+}
+
+/* Ajustes responsivos del modal */
+@media (max-width: 720px) {
+  .modal-body {
+    grid-template-columns: 1fr; /* ya está, pero lo refuerzo */
+  }
+
+  .review-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .like-dislike {
+    justify-content: center;
+  }
+}
+
 /* ==================== Modal de cuenta ==================== */
 #accountModal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  top: 70px;              /* debajo del header/nav */
+  right: 20px;            /* pegado a la derecha */
   z-index: 1000;
 }
 
@@ -456,50 +497,31 @@ main {
 }
 
 #accountModal .modal-content {
-  background: #141414; /* mismo fondo que Netflix style */
+  background: #141414;
   padding: 20px;
-  border-radius: 10px;
-  width: 320px;
-  max-width: 90%;
+  border-radius: 12px;
+  width: 260px;
   color: #fff;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.2s ease-in-out;
 }
-
-#accountModal .modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  font-size: 20px;
-  color: #fff;
-  cursor: pointer;
-}
-
-#accountModal .modal-body h2 {
-  margin: 0 0 15px 0;
-  font-size: 1.3rem;
-  text-align: center;
-}
-
 .account-options {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.account-options li {
-  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .account-options .btn {
   width: 100%;
-  padding: 10px;
+  text-align: left;
+  padding: 10px 14px;
   border: none;
   border-radius: 6px;
-  background: #e50914; /* rojo estilo Netflix */
+  background: #e50914;
   color: white;
   font-size: 0.95rem;
   cursor: pointer;
@@ -509,12 +531,10 @@ main {
 .account-options .btn:hover {
   background: #f40612;
 }
-
-/* Animación */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+.account-options .btn {
+  box-sizing: border-box;
 }
+
 
 /* ============ Modal ============ */
 .modal {
@@ -629,6 +649,7 @@ main {
 #modalRating {
   letter-spacing: .5px;
 }
+
 
 /* ========= Reseñas ========= */
 .reviews {
@@ -830,4 +851,33 @@ main {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@media (max-width: 932px) {
+  .modal-body {
+    grid-template-columns: 1fr;
+    padding: 16px;       /* menos padding en pantallas pequeñas */
+    gap: 16px;           /* espacio compacto */
+  }
+
+  .modal-media {
+    max-width: 300px;    /* limitar tamaño del póster */
+    margin: 0 auto;      /* centrar en columna */
+  }
+
+  .review-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.modal-content {
+  max-height: 90vh;       
+  overflow-y: auto;      
+}
+
+/* Scroll */
+.modal-body {
+  max-height: 70vh;       
+  overflow-y: auto;
+  padding-right: 8px;     /
 }

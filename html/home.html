@@ -25,6 +25,14 @@
       <a class="item" href="#peliculas">Películas</a>
       <a class="item" href="#anime">Anime</a>
       <a class="item" href="#series">Series</a>
+      <!-- Dropdown de Géneros (con IDs que usa el JS) -->
+            <div class="genres">
+                <button id="genreBtn" class="genres-btn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <span id="genreLabel" class="genreLabel">Géneros</span>
+                    <span class="caret" aria-hidden="true"></span>
+                </button>
+                <div id="genreMenu" class="menu" hidden></div>
+            </div>
     </nav>
 
     <!-- Iconos (lupa + cuenta) -->
@@ -34,6 +42,8 @@
         <img class="icon" src="../storage/carbon_search.png" width="28" height="28" alt="">
       </button>
 
+       
+
       <!-- Formulario de búsqueda oculto -->
       <form id="navSearch" class="nav-search" role="search" aria-hidden="true">
         <input id="searchInput" type="search" name="q" placeholder="Buscar títulos, géneros..." autocomplete="off"
@@ -42,9 +52,9 @@
       </form>
 
       <!-- Cuenta -->
-      <button class="icon-btn round" id="accountBtn" aria-label="Cuenta">
+      <a class="icon-btn round" href="./account.html" aria-label="Cuenta">
         <img class="icon" src="../storage/codicon_account.png" width="28" height="28" alt="">
-      </button>
+      </a>
     </div>
   </header>
 
@@ -108,76 +118,83 @@
       </div>
     </section>
   </main>
+  <!-- Modal de Cuenta -->
+  <div id="accountModal" hidden>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Cerrar">✕</button>
+      <div class="modal-body">
+        <ul class="account-options">
+          <li><button class="btn" id="accountBtn">Cuenta</button></li>
+          <li><button class="btn" id="passwordBtn">Contraseña</button></li>
+          <li><button class="btn" id="supportBtn">Soporte</button></li>
+          <li><button class="btn" id="logoutBtn">Cerrar sesión</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- Modal de detalle -->
+  <div id="detailModal" class="modal" hidden>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Cerrar">✕</button>
+      <div class="modal-backdrop"></div>
 
-      <<div id="detailModal" class="modal" hidden>
-  <div class="modal-content">
-    <button class="modal-close" aria-label="Cerrar">✕</button>
-    <div class="modal-backdrop"></div>
+      <div class="modal-body">
+        <!-- Columna imagen -->
+        <aside class="modal-media">
+          <img id="modalPoster" alt="Póster" loading="lazy">
+        </aside>
 
-    <div class="modal-body">
-      <!-- Columna imagen -->
-      <aside class="modal-media">
-        <img id="modalPoster" alt="Póster" loading="lazy">
-      </aside>
+        <!-- Columna info + reseñas -->
+        <article class="modal-info">
+          <h2 id="modalTitle"></h2>
+          <p id="modalMeta"></p>
+          <p id="modalRating"></p>
+          <p id="modalDesc"></p>
 
-      <!-- Columna info + reseñas -->
-      <article class="modal-info">
-        <h2 id="modalTitle"></h2>
-        <p id="modalMeta"></p>
-        <p id="modalRating"></p>
-        <p id="modalDesc"></p>
+          <section class="reviews" id="reviewsSection" aria-label="Reseñas">
+            <header class="reviews__header">
+              <h3>Reseñas</h3>
+              <small id="reviewsNote" class="muted">
+                Las reseñas se publican cuando un administrador las aprueba.
+              </small>
+            </header>
 
-        <section class="reviews" id="reviewsSection" aria-label="Reseñas">
-          <header class="reviews__header">
-            <h3>Reseñas</h3>
-            <small id="reviewsNote" class="muted">
-              Las reseñas se publican cuando un administrador las aprueba.
-            </small>
-          </header>
+            <!-- Formulario crear/editar -->
+            <form id="reviewForm" class="review-form">
+              <div class="rating" id="ratingStars" aria-label="Calificación">
+                <!-- estrellas (1–5) controladas por JS -->
+                <button type="button" data-score="1" aria-label="1 estrella">★</button>
+                <button type="button" data-score="2" aria-label="2 estrellas">★</button>
+                <button type="button" data-score="3" aria-label="3 estrellas">★</button>
+                <button type="button" data-score="4" aria-label="4 estrellas">★</button>
+                <button type="button" data-score="5" aria-label="5 estrellas">★</button>
+              </div>
 
-          <!-- Formulario crear/editar -->
-          <form id="reviewForm" class="review-form">
-            <div class="rating" id="ratingStars" aria-label="Calificación">
-              <button type="button" data-score="1" aria-label="1 estrella">★</button>
-              <button type="button" data-score="2" aria-label="2 estrellas">★</button>
-              <button type="button" data-score="3" aria-label="3 estrellas">★</button>
-              <button type="button" data-score="4" aria-label="4 estrellas">★</button>
-              <button type="button" data-score="5" aria-label="5 estrellas">★</button>
-            </div>
+              <textarea id="reviewText" rows="3" placeholder="Escribe tu reseña..." required></textarea>
+              <input type="hidden" id="reviewId" value="">
+              <div class="review-form__actions">
+                <button type="submit" class="btn primary" id="reviewSubmitBtn">Enviar reseña</button>
+                <button type="button" class="btn" id="reviewCancelBtn" hidden>Cancelar edición</button>
+                <small class="muted" id="reviewStatusHint"></small>
+              </div>
+              <!-- Botones de Like/Dislike -->
+              <div class="like-dislike">
+                <button type="button" id="likeBtn" aria-label="Me gusta">👍</button>
+                <button type="button" id="dislikeBtn" aria-label="No me gusta">👎</button>
+              </div>
 
-            <textarea id="reviewText" rows="3" placeholder="Escribe tu reseña..." required></textarea>
-            <input type="hidden" id="reviewId" value="">
-            <div class="review-form__actions">
-              <button type="submit" class="btn primary" id="reviewSubmitBtn">Enviar reseña</button>
-              <button type="button" class="btn" id="reviewCancelBtn" hidden>Cancelar edición</button>
               <small class="muted" id="reviewStatusHint"></small>
-            </div>
-          </form>
+      </div>
+      </form>
 
-          <ul id="reviewsList" class="reviews__list"></ul>
-        </section>
+      <!-- Lista de reseñas -->
+      <ul id="reviewsList" class="reviews__list"></ul>
+      </section>
       </article>
     </div>
   </div>
-</div>
-
-<!-- Modal de cuenta -->
-<div id="accountModal" class="modal" hidden>
-  <div class="modal-content">
-    <button class="modal-close" id="closeAccountModal" aria-label="Cerrar">✕</button>
-    <div class="modal-backdrop"></div>
-
-    <div class="modal-body">
-      <h2>Mi cuenta</h2>
-      <ul class="account-options">
-        <li><button class="btn" id="accountEmailBtn">Correo</button></li>
-        <li><button class="btn" id="accountPasswordBtn">Contraseña</button></li>
-        <li><button class="btn" id="supportBtn">Soporte</button></li>
-        <li><button class="btn" id="logoutBtn">Cerrar sesión</button></li>
-      </ul>
-    </div>
   </div>
-</div>
+
   <script src="../scripts/home.js" defer></script>
 </body>
 
