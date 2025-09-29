@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <link rel="icon" type="image/x-icon" href="../storage/kasita.webp">
+  <title>Recuperar contraseña - KarenFlix</title>
+  <link rel="stylesheet" href="../styles/index.css">
+  <link rel="stylesheet" href="../styles/forgot.css">
+</head>
+<body>
+  <main class="landing">
+    <div class="bg"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="container">
+      <!-- Solo usamos el panel derecho en esta vista -->
+      <section class="right">
+        <div class="card">
+          <div class="card-header">
+            <img class="k-logo" src="../storage/k.png" alt="K" />
+            <h2>Define tu nueva contraseña</h2>
+            <p class="subtitle">El enlace vence pronto; crea una clave segura.</p>
+          </div>
+
+          <form id="resetForm" class="form" novalidate>
+  <!-- Correo -->
+  <label class="input-group">
+    <input id="resetEmail" type="email" placeholder="Correo" inputmode="email" autocomplete="email" aria-label="Correo" />
+    <span class="icon"><img src="../storage/ic_baseline-email.png" alt=""/></span>
+  </label>
+
+  <!-- Nueva contraseña -->
+  <label class="input-group">
+    <input id="newPass" type="password" placeholder="Nueva contraseña" autocomplete="new-password" aria-label="Nueva contraseña" />
+    <span class="icon"><img src="../storage/tabler_lock-filled.png" alt=""/></span>
+  </label>
+
+  <!-- Confirmación -->
+  <label class="input-group">
+    <input id="newConf" type="password" placeholder="Confirmar contraseña" autocomplete="new-password" aria-label="Confirmar contraseña" />
+    <span class="icon"><img src="../storage/tabler_lock-filled.png" alt=""/></span>
+  </label>
+
+  <p class="policy">
+    Debe tener <strong>mín. 8</strong> caracteres, con <strong>1 mayúscula</strong>, <strong>1 minúscula</strong> y <strong>1 número</strong>.
+  </p>
+
+  <button id="btnReset" class="btn-primary" type="submit">Guardar</button>
+  <div id="formAlert" class="form-alert" aria-live="polite"></div>
+</form>
+
+          <p class="meta"><a class="link" href="../index.html">Volver al inicio</a></p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="../scripts/reset.js" defer></script>
+</body>
+</html>

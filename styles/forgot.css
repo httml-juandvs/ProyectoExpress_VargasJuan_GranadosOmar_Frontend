@@ -1,0 +1,127 @@
+/* ===== Forgot.css (complementa a index.css) =====
+   Mantiene el look & feel y centra la card en desktop.
+   Cargar DESPUÉS de index.css.
+*/
+
+/* === Centrado real del panel en la vista Forgot === */
+.landing .container{
+  grid-template-columns: 1fr !important; /* pisa el 1.1fr 0.9fr del index */
+  justify-items: center;                  /* centra horizontal en la rejilla */
+  width: min(92vw, 1100px);
+  margin-inline: auto;
+}
+.landing .right{
+  grid-column: 1 / -1;      /* ocupa toda la rejilla */
+  justify-self: center;
+  justify-content: center;  /* pisa el flex-end del index */
+  width: 100%;
+}
+
+/* Layout: centrar la card también en desktop */
+.right{
+  justify-content: center;
+}
+
+/* Card un poco más angosta en esta vista */
+.card{
+  width: 38vw;
+  max-width: 560px;
+}
+
+/* Header específico de forgot/reset */
+.card-header h2{
+  margin: 0 0 0.6vh;
+  font-weight: 800;
+  font-size: clamp(2.2vh, 2.2vw, 3vh);
+  letter-spacing: .02em;
+}
+.card-header .subtitle{
+  color: var(--muted);
+  font-size: 1.8vh;
+  margin-top: .8vh;
+}
+
+/* Inputs: estados de error (vía JS opción A: agregando .invalid al contenedor) */
+.input-group.invalid{
+  border-color: rgba(255, 120, 120, .9);
+  box-shadow:
+    inset 0 0 0 .3vw rgba(255,120,120,.45),
+    0 .6vh 1.4vh rgba(0,0,0,.35);
+}
+
+/* Alternativa sin tocar JS (navegadores modernos)
+.input-group:has(input.invalid){
+  border-color: rgba(255, 120, 120, .9);
+  box-shadow:
+    inset 0 0 0 .3vw rgba(255,120,120,.45),
+    0 .6vh 1.4vh rgba(0,0,0,.35);
+}
+*/
+
+/* Feedback visual al enfocar */
+.input-group input:focus{
+  outline: none;
+  box-shadow:
+    0 0 0 .35vh rgba(255,255,255,.22),
+    inset 0 0 0 .2vw rgba(255,255,255,.2);
+}
+
+/* Alertas de formulario */
+.form-alert{
+  margin-top: 1.2vh;
+  font-size: 1.6vh;
+  min-height: 2.4vh;
+}
+.form-alert.success{ color: #7DFFA3; }
+.form-alert.error{   color: #ff8a8a; }
+
+/* Botón bloqueado durante la petición */
+.btn-primary[disabled]{
+  opacity: .65;
+  cursor: not-allowed;
+  filter: grayscale(.05);
+  box-shadow: none;
+}
+
+/* Micro-animación sutil para error (si añades .invalid al input) */
+.input-group.invalid input{
+  animation: kf-shake .14s linear 2;
+}
+@keyframes kf-shake{
+  0%{ transform: translateX(0) }
+  50%{ transform: translateX(.35vh) }
+  100%{ transform: translateX(0) }
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 960px){
+  .card{
+    width: 78vw;          /* igual que en index.css para coherencia */
+    max-width: none;
+  }
+}
+
+@media (max-width: 430px){
+  .landing{
+    min-height: 100svh;
+    padding-top: calc(env(safe-area-inset-top) + 3vh);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 3vh);
+  }
+  .container{
+    width: 92vw;
+    grid-template-columns: 1fr;
+    gap: 3.6vh;
+  }
+  .card{
+    width: 92vw;
+    padding: 3.2vh 4vw;
+    border-radius: 6vw;
+    backdrop-filter: blur(2.4vh);
+    -webkit-backdrop-filter: blur(2.4vh);
+    box-shadow: 0 2vh 4vh rgba(0, 0, 0, 0.24);
+  }
+  .card-header h2{
+    font-size: 2.2vh;
+  }
+  .btn-primary{ width: 100%; }
+}

@@ -1,11 +1,11 @@
 (() => {
   "use strict";
 
-  // ---------- Utils ----------
+  // ========== Utils ==========
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  function ensureErr(input) {
+  const ensureErr = (input) => {
     let box = input?.parentElement?.querySelector?.(".error-msg");
     if (!box && input?.parentElement) {
       box = document.createElement("div");
@@ -13,28 +13,31 @@
       input.parentElement.appendChild(box);
     }
     return box;
-  }
-  function fieldErr(input, msg) {
+  };
+  const fieldErr = (input, msg) => {
     if (!input) return;
     input.classList.add("invalid");
     input.setAttribute("aria-invalid", "true");
+    input.parentElement?.classList?.add("invalid"); // resalta el contenedor
     const box = ensureErr(input);
     if (box) box.textContent = msg || "";
-  }
-  function fieldOk(input) {
+  };
+  const fieldOk = (input) => {
     if (!input) return;
     input.classList.remove("invalid");
     input.removeAttribute("aria-invalid");
+    input.parentElement?.classList?.remove("invalid");
     const box = input.parentElement?.querySelector?.(".error-msg");
     if (box) box.textContent = "";
-  }
-  function setFormAlert(msg, type = "error") {
+  };
+  const setFormAlert = (msg = "", type = "error") => {
     const el = $("#formAlert");
     if (!el) return;
-    el.textContent = msg || "";
+    el.textContent = msg;
+    el.classList.toggle("success", type === "success");
     el.style.color = type === "success" ? "#7DFFA3" : "#ff8a8a";
-  }
-  function lockButton(btn, locked = true, textLocked = "Procesando…") {
+  };
+  const lockButton = (btn, locked = true, textLocked = "Procesando…") => {
     if (!btn) return;
     if (locked) {
       btn.dataset.originalText = btn.textContent;
@@ -46,9 +49,9 @@
       btn.disabled = false;
       btn.removeAttribute("aria-busy");
     }
-  }
+  };
 
-  // ---------- Tabs (Login / Register) ----------
+  // ========== Tabs (Login / Register) ==========
   const tabs         = $$(".tab");
   const loginForm    = $("#loginForm");
   const registerForm = $("#registerForm");
@@ -66,9 +69,10 @@
     }
   }
   tabs.forEach(t => t.addEventListener("click", () => setActiveTab(t.dataset.tab)));
-  setActiveTab("login"); // estado inicial seguro
+  setActiveTab("login");
 
-  // ---------- Validaciones (Registro) ----------
+
+  // ========== Validaciones (Registro) ==========
   const fullName    = $("#fullName");
   const regEmail    = $("#regEmail");
   const regPassword = $("#regPassword");
@@ -117,12 +121,12 @@
   regConfirm?.addEventListener("input", () => vConf(regPassword, regConfirm));
   regTerms?.addEventListener("change", () => vTerms(regTerms));
 
-  // ---------- API ----------
+  // ========== API ==========
   const API_BASE      = localStorage.getItem("KARENFLIX_API") || "http://localhost:3000/api/v1";
   const REGISTER_URL  = `${API_BASE}/auth/register`;
   const LOGIN_URL     = `${API_BASE}/auth/login`;
 
-  // ---------- Submit: Registro ----------
+  // ========== Submit: Registro ==========
   registerForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     setFormAlert("");
@@ -150,15 +154,21 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+
+      // Conflicto (email ya registrado)
+      if (res.status === 409) {
+        fieldErr(regEmail, "Ese correo ya está registrado.");
+        const data = await res.json().catch(() => ({}));
+        setFormAlert(data?.message || "Ese correo ya está registrado.");
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
         setFormAlert("¡Cuenta creada! Ya puedes iniciar sesión.", "success");
         registerForm.reset();
-        setActiveTab("login"); // vuelve a Login
-      } else if (res.status === 409) {
-        fieldErr(regEmail, "Ese correo ya está registrado.");
-        setFormAlert("Ese correo ya está registrado.");
+        setActiveTab("login");
       } else {
         setFormAlert(data?.message || data?.error || "No se pudo completar el registro.");
       }
@@ -170,16 +180,16 @@
     }
   });
 
-  // ---------- Submit: Login ----------
+  // ========== Submit: Login ==========
   const loginEmail    = $("#loginEmail");
   const loginPassword = $("#loginPassword");
 
   loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    setFormAlert(""); // limpiar mensajes
+    setFormAlert("");
 
-    const email = loginEmail.value.trim().toLowerCase();
-    const password = loginPassword.value.trim();
+    const email = loginEmail?.value?.trim().toLowerCase() || "";
+    const password = loginPassword?.value?.trim() || "";
 
     if (!email || !password) {
       setFormAlert("Debes ingresar correo y contraseña.");
@@ -188,25 +198,37 @@
 
     const btnLogin = loginForm.querySelector("button[type=submit]");
     lockButton(btnLogin, true, "Ingresando…");
+
     try {
       const res = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
+
+      if (res.status === 401) {
+        const data = await res.json().catch(() => ({}));
+        setFormAlert(data?.message || "Credenciales inválidas.");
+        return;
+      }
+      if (res.status === 429) {
+        setFormAlert("Demasiados intentos. Intenta en unos minutos.");
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
 
-      if (res.ok && data.token) {
+      if (res.ok && data?.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user || {}));
 
         setFormAlert("Bienvenido 👋", "success");
 
         setTimeout(() => {
-          window.location.href = "./home.html";
+          window.location.href = "./html/home.html";
         }, 800);
       } else {
-        setFormAlert(data?.msg || data?.message || "Credenciales inválidas.");
+        setFormAlert(data?.message || data?.error || "No se pudo iniciar sesión.");
       }
     } catch (err) {
       console.error("Error de login:", err);
@@ -215,4 +237,15 @@
       lockButton(btnLogin, false);
     }
   });
+
+  // ========== Enlace "¿Olvidaste la contraseña?" ==========
+  // Si en tu HTML dejaste el href como '#', lo redirigimos a la página real:
+  const forgotLink = document.querySelector('.meta .link[href="#"]');
+  if (forgotLink) {
+    forgotLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Ajusta la ruta si tu estructura es distinta
+      window.location.href = "./html/forgot.html";
+    });
+  }
 })();
