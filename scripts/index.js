@@ -1,6 +1,11 @@
 (() => {
   "use strict";
 
+  // ===== Config de rutas =====
+  // Si tus páginas viven en /pages (index.html en raíz), deja esto así.
+  // Si las pusiste en /html, cámbialo a "/html".
+  const PAGES_BASE = "./html";
+
   // ========== Utils ==========
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -18,7 +23,7 @@
     if (!input) return;
     input.classList.add("invalid");
     input.setAttribute("aria-invalid", "true");
-    input.parentElement?.classList?.add("invalid"); // resalta el contenedor
+    input.parentElement?.classList?.add("invalid");
     const box = ensureErr(input);
     if (box) box.textContent = msg || "";
   };
@@ -70,7 +75,6 @@
   }
   tabs.forEach(t => t.addEventListener("click", () => setActiveTab(t.dataset.tab)));
   setActiveTab("login");
-
 
   // ========== Validaciones (Registro) ==========
   const fullName    = $("#fullName");
@@ -155,7 +159,6 @@
         body: JSON.stringify(payload)
       });
 
-      // Conflicto (email ya registrado)
       if (res.status === 409) {
         fieldErr(regEmail, "Ese correo ya está registrado.");
         const data = await res.json().catch(() => ({}));
@@ -224,8 +227,13 @@
 
         setFormAlert("Bienvenido 👋", "success");
 
+        // Redirección por rol (usando /pages/*)
+        const role = String(data?.user?.role || "user").toLowerCase();
+        const dest = `${PAGES_BASE}/${role === "admin" ? "admin" : "home"}.html`;
+
         setTimeout(() => {
-          window.location.href = "./html/home.html";
+          // No concatenamos manualmente origin + "../...", usamos una ruta absoluta válida
+          window.location.href = dest;
         }, 800);
       } else {
         setFormAlert(data?.message || data?.error || "No se pudo iniciar sesión.");
@@ -239,13 +247,12 @@
   });
 
   // ========== Enlace "¿Olvidaste la contraseña?" ==========
-  // Si en tu HTML dejaste el href como '#', lo redirigimos a la página real:
+  // Si el enlace en tu HTML era href="#", lo convertimos a /pages/forgot.html
   const forgotLink = document.querySelector('.meta .link[href="#"]');
   if (forgotLink) {
     forgotLink.addEventListener("click", (e) => {
       e.preventDefault();
-      // Ajusta la ruta si tu estructura es distinta
-      window.location.href = "./html/forgot.html";
+      window.location.href = `${PAGES_BASE}/forgot.html`;
     });
   }
 })();

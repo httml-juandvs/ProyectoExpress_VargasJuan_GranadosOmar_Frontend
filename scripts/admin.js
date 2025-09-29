@@ -1,25 +1,33 @@
 // =======================
 // Admin Frontend (Vanilla JS)
-// SIN MOCK. Conecta a tu API real.
+// Conecta a tu API real.
 // =======================
 
+// -------- API base (usa la misma que el login) --------
 const API = {
-  BASE_URL: "http://localhost:3000/api", // <- cámbialo al deploy real
+  BASE_URL: (localStorage.getItem("KARENFLIX_API") || "http://localhost:3000/api/v1").replace(/\/$/, "")
 };
 
-// ------- Auth mínima (usa localStorage) -------
+// ------- Auth mínima (localStorage) -------
 const Auth = {
   getToken(){ return localStorage.getItem("token"); },
   getUser(){ try { return JSON.parse(localStorage.getItem("user")||"null"); } catch { return null } },
   setSession({token,user}){ localStorage.setItem("token", token); localStorage.setItem("user", JSON.stringify(user)); },
   clear(){ localStorage.removeItem("token"); localStorage.removeItem("user"); },
-};
 
-// (opcional) autologin dev: comenta esto en producción
-if(!Auth.getToken()){
-  // Deja vacío si no quieres autologin; aquí solo ayuda a ver el panel.
-  // Auth.setSession({ token: "dev.jwt", user: { id:"u1", email:"admin@karenflix.dev", role:"admin" } });
-}
+  // ✅ asegúrate de que exista token y rol=admin
+  ensureAdmin(){
+    const t = this.getToken();
+    const u = this.getUser();
+    if(!t || !u || String(u.role||"").toLowerCase() !== "admin"){
+      // si no es admin, sácalo a home
+      const base = "/html"; // ajusta si tus páginas están en otra carpeta
+      window.location.replace(`../index.html`);
+      return false;
+    }
+    return true;
+  }
+};
 
 // ------- HTTP real -------
 async function http(path, opts={}){
@@ -32,10 +40,12 @@ async function http(path, opts={}){
     }
   });
   if(!res.ok){
-    const text = await res.text().catch(()=> "");
-    throw new Error(`HTTP ${res.status} – ${text || res.statusText}`);
+    // intenta decodificar JSON de error
+    let msg = "";
+    try { const j = await res.json(); msg = j?.message || j?.error || ""; }
+    catch { msg = await res.text().catch(()=> ""); }
+    throw new Error(`HTTP ${res.status}${msg ? " – " + msg : ""}`);
   }
-  // algunos endpoints pueden responder 204
   if(res.status === 204) return null;
   return res.json();
 }
@@ -51,6 +61,7 @@ const Routes = [
 
 function mountNav(){
   const nav = document.getElementById("nav");
+  if(!nav) return; // 👈 evita crash si no existe
   nav.innerHTML = `
     <small>General</small>
     ${Routes.map(r=>`<a href="${r.path}" data-path="${r.path}">${Icon(r.icon)} ${r.label}</a>`).join("")}
@@ -71,6 +82,7 @@ async function Router(){
   const hash = location.hash || "#/admin";
   const route = Routes.find(r=>r.path===hash) || Routes[0];
   const el = document.getElementById("view");
+  if(!el) return; // 👈 evita crash si falta el contenedor
   try{
     el.innerHTML = await route.view();
     route.afterMount && route.afterMount();
@@ -103,7 +115,7 @@ async function Dashboard(){
 
 async function Users(){
   const res = await http("/admin/users");
-  const rows = res.items.map(u=>`
+  const rows = (res.items || []).map(u=>`
     <tr>
       <td>${u.email}</td>
       <td><span class="pill">${u.role}</span></td>
@@ -132,7 +144,7 @@ async function Users(){
 
 async function Categories(){
   const res = await http("/admin/categories");
-  const rows = res.items.map(c=>`
+  const rows = (res.items || []).map(c=>`
     <tr>
       <td>${c.name}</td>
       <td><code>${c.slug}</code></td>
@@ -160,8 +172,9 @@ async function Categories(){
 
 async function Titles(){
   const res  = await http("/admin/titles");
-  const cats = (await http("/admin/categories")).items.reduce((acc,x)=>{acc[x._id||x.id]=x;return acc;}, {});
-  const rows = res.items.map(t=>`
+  const cats = (await http("/admin/categories")).items
+    .reduce((acc,x)=>{acc[x._id||x.id]=x;return acc;}, {});
+  const rows = (res.items || []).map(t=>`
     <tr>
       <td>${t.title}</td>
       <td>${t.year || ""}</td>
@@ -198,8 +211,9 @@ async function Titles(){
 
 async function Reviews(){
   const res = await http("/admin/reviews");
-  const mapTitle = (await http("/admin/titles")).items.reduce((a,x)=>{a[x._id||x.id]=x.title;return a;}, {});
-  const rows = res.items.map(r=>`
+  const mapTitle = (await http("/admin/titles")).items
+    .reduce((a,x)=>{a[x._id||x.id]=x.title;return a;}, {});
+  const rows = (res.items || []).map(r=>`
     <tr>
       <td>${mapTitle[r.titleId] || r.titleId}</td>
       <td>${r.score}</td>
@@ -222,28 +236,7 @@ async function Reviews(){
   `;
 }
 
-async function Settings(){
-  return `
-    <section class="grid">
-      <div class="card">
-        <div class="row">
-          <div class="col">
-            <label>API Base URL</label>
-            <input class="input" id="apiBase" value="${API.BASE_URL}"/>
-          </div>
-          <div class="col">
-            <label>Nota</label>
-            <input class="input" value="Este panel usa API real (sin mock)" disabled/>
-          </div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn btn--accent" onclick="saveSettings()">Guardar</button>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
+// ------- Logs & helpers -------
 async function Logs(){
   return `
     <section class="grid">
@@ -253,10 +246,9 @@ async function Logs(){
     </section>
   `;
 }
-
 async function TableLogs(){
   const res = await http("/admin/logs");
-  const rows = res.items.map(l=>`
+  const rows = (res.items || []).map(l=>`
     <tr>
       <td>${l.actor}</td>
       <td>${l.action}</td>
@@ -286,9 +278,7 @@ function Icon(name){
     users:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 18c0-2.21-3.582-3-6-3s-6 .79-6 3" stroke="currentColor"/><circle cx="10" cy="8" r="3.5" stroke="currentColor"/></svg>',
     tags: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 13L12 21L3 12V3h9l8 10z" stroke="currentColor"/></svg>',
     film: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor"/><path d="M8 5v14M16 5v14M4 9h4M4 15h4M16 9h4M16 15h4" stroke="currentColor"/></svg>',
-    star: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 10l5.8-.8L12 4z" stroke="currentColor"/></svg>',
-    settings:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor"/><path d="M19 12a7 7 0 01-.2 1.7l2.1 1.6-2 3.5-2.5-1a7.2 7.2 0 01-1.5.9l-.4 2.7H9.5l-.4-2.7a7.2 7.2 0 01-1.5-.9l-2.5 1-2-3.5 2.1-1.6A7 7 0 017 12c0-.6.1-1.1.2-1.7L5.1 8.7l2-3.5 2.5 1c.5-.3 1-.6 1.5-.9l.4-2.7h3.6l.4 2.7c.5.3 1 .6 1.5.9l2.5-1 2 3.5-2.1 1.6c.1.6.1 1.1.1 1.7z" stroke="currentColor"/></svg>',
-    clock:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor"/><path d="M12 8v5l3 2" stroke="currentColor"/></svg>'
+    star: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 10l5.8-.8L12 4z" stroke="currentColor"/></svg>'
   };
   return map[name] || '';
 }
@@ -330,19 +320,19 @@ window.openUser = async function(id){
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
    <button class="btn btn--accent" onclick="saveUser('${id}')">Guardar</button>`);
-}
+};
 window.saveUser = async function(id){
   const role = document.getElementById('uRole').value;
   const banned = document.getElementById('uBanned').value === 'true';
   await http(`/admin/users/${id}`, { method:'PATCH', body: JSON.stringify({role,banned}) });
   closeModal(); Router();
-}
+};
 window.filterUsers = function(q){
   const rows = document.querySelectorAll('#userRows tr');
   rows.forEach(tr=>{
     tr.style.display = tr.firstElementChild.textContent.toLowerCase().includes(q.toLowerCase())? "" : "none";
   });
-}
+};
 
 // ------- Actions (Categories) -------
 window.createCategory = function(){
@@ -354,14 +344,14 @@ window.createCategory = function(){
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
    <button class="btn btn--accent" onclick="saveCategory()">Crear</button>`);
-}
+};
 window.saveCategory = async function(){
   const name = document.getElementById('catName').value.trim();
   const slug = document.getElementById('catSlug').value.trim();
   if(!name || !slug) return alert('Completa los campos');
   await http('/admin/categories', { method:'POST', body: JSON.stringify({name,slug})});
   closeModal(); Router();
-}
+};
 window.editCategory = async function(id){
   const {items} = await http('/admin/categories');
   const c = items.find(x=>(x._id||x.id)===id);
@@ -373,18 +363,18 @@ window.editCategory = async function(id){
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
    <button class="btn btn--accent" onclick="updateCategory('${id}')">Guardar</button>`);
-}
+};
 window.updateCategory = async function(id){
   const name = document.getElementById('catName').value.trim();
   const slug = document.getElementById('catSlug').value.trim();
   await http(`/admin/categories/${id}`, { method:'PUT', body: JSON.stringify({name,slug})});
   closeModal(); Router();
-}
+};
 window.removeCategory = async function(id){
   if(!confirm('¿Eliminar categoría?')) return;
   await http(`/admin/categories/${id}`, { method:'DELETE' });
   Router();
-}
+};
 
 // ------- Actions (Titles) -------
 window.createTitle = async function(){
@@ -405,7 +395,7 @@ window.createTitle = async function(){
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
    <button class="btn btn--accent" onclick="saveTitle()">Crear</button>`);
-}
+};
 window.saveTitle = async function(){
   const title = document.getElementById('tTitle').value.trim();
   const year = +document.getElementById('tYear').value;
@@ -414,7 +404,7 @@ window.saveTitle = async function(){
   if(!title) return alert('Título requerido');
   await http('/admin/titles', { method:'POST', body: JSON.stringify({title,year,categoryId,status})});
   closeModal(); Router();
-}
+};
 window.editTitle = async function(id){
   const {items} = await http('/admin/titles');
   const t = items.find(x=>(x._id||x.id)===id);
@@ -440,7 +430,7 @@ window.editTitle = async function(id){
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
    <button class="btn btn--accent" onclick="updateTitle('${id}')">Guardar</button>`);
-}
+};
 window.updateTitle = async function(id){
   const title = document.getElementById('tTitle').value.trim();
   const year = +document.getElementById('tYear').value;
@@ -448,58 +438,65 @@ window.updateTitle = async function(id){
   const status = document.getElementById('tStatus').value;
   await http(`/admin/titles/${id}`, { method:'PATCH', body: JSON.stringify({title,year,categoryId,status})});
   closeModal(); Router();
-}
+};
 window.approveTitle = async function(id){ await http(`/admin/titles/${id}/approve`, { method:'PATCH' }); Router(); }
 window.rejectTitle  = async function(id){
   const reason = prompt('Motivo del rechazo:')||'';
   await http(`/admin/titles/${id}/reject`, { method:'PATCH', body: JSON.stringify({reason}) });
   Router();
-}
+};
 
 // ------- Actions (Reviews) -------
 window.deleteReview = async function(id){
   if(!confirm('¿Eliminar reseña?')) return;
   await http(`/admin/reviews/${id}`, { method:'DELETE' });
   Router();
-}
+};
 
 // ------- Settings -------
 window.saveSettings = function(){
-  API.BASE_URL = document.getElementById('apiBase').value;
+  API.BASE_URL = document.getElementById('apiBase')?.value || API.BASE_URL;
   alert('Guardado (frontend)');
-}
+};
 
 // ------- Modal helpers -------
-const modal = document.getElementById('modal');
-const modalBody = document.getElementById('modalBody');
-const modalTitle = document.getElementById('modalTitle');
+const modal       = document.getElementById('modal');
+const modalBody   = document.getElementById('modalBody');
+const modalTitle  = document.getElementById('modalTitle');
 const modalFooter = document.getElementById('modalFooter');
-document.getElementById('closeModal').onclick = closeModal;
+document.getElementById('closeModal')?.addEventListener("click", closeModal);
 
 function openModal(title, body, footer){
-  modalTitle.textContent = title;
-  modalBody.innerHTML = body;
-  modalFooter.innerHTML = footer||'';
+  if(!modal) return;
+  modalTitle && (modalTitle.textContent = title);
+  modalBody  && (modalBody.innerHTML  = body);
+  modalFooter&& (modalFooter.innerHTML= footer||'');
   modal.classList.add('open');
   modal.setAttribute('aria-hidden','false');
 }
 function closeModal(){
+  if(!modal) return;
   modal.classList.remove('open');
   modal.setAttribute('aria-hidden','true');
 }
 
 // ------- Global UI events -------
-document.getElementById('logout').onclick = () => {
+const logoutBtn = document.getElementById('logout');
+logoutBtn?.addEventListener("click", () => {
   Auth.clear();
-  window.location.replace(`${location.origin}/index.html`);
-};
+  window.location.replace(`/index.html`);
+});
 
-document.getElementById('role-pill').textContent = 'rol: ' + (Auth.getUser()?.role || '-');
+// Solo si existe el pill en tu HTML
+const rolePill = document.getElementById('role-pill');
+if(rolePill) rolePill.textContent = 'rol: ' + (Auth.getUser()?.role || '-');
 
 // ------- Render helpers -------
 const Render = {
   notAllowed(){
-    document.getElementById("view").innerHTML = `
+    const v = document.getElementById("view");
+    if(!v) return;
+    v.innerHTML = `
       <div class="card">
         <h2>Acceso restringido</h2>
         <p>Necesitas una sesión de administrador para ver este módulo.</p>
@@ -511,5 +508,9 @@ const Render = {
 };
 
 // ------- Boot -------
-mountNav();
-Router();
+(function boot(){
+  // fuerza hash por defecto
+  if(!location.hash) location.hash = "#/admin";
+  mountNav();
+  Router();
+})();
