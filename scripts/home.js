@@ -645,6 +645,54 @@ function renderStatusBadge(status) {
   const v = map[status] || map.pending;
   return `<span class="${v.cls}">${v.text}</span>`;
 }
+/*
+/* =============== Modal de cuenta =============== */
+function initAccountModal() {
+  const accountBtn = document.getElementById("accountBtn");
+  const accountModal = document.getElementById("accountModal");
+  const closeBtn = document.getElementById("closeAccountModal");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (!accountBtn || !accountModal) return;
+
+  // abrir
+  accountBtn.addEventListener("click", () => {
+    accountModal.removeAttribute("hidden");
+    document.addEventListener("keydown", escCloseAccount);
+  });
+
+  // cerrar con la X
+  closeBtn?.addEventListener("click", () => closeAccountModal());
+
+  // cerrar sesión
+  logoutBtn?.addEventListener("click", () => {
+    localStorage.removeItem("auth"); // borra sesión si usas localStorage
+    window.location.href = "./index.html";
+  });
+
+  // cerrar clic fuera
+  accountModal.addEventListener("click", (e) => {
+    if (e.target === accountModal) closeAccountModal();
+  });
+
+  function closeAccountModal() {
+    accountModal.setAttribute("hidden", "");
+    document.removeEventListener("keydown", escCloseAccount);
+  }
+
+  function escCloseAccount(e) {
+    if (e.key === "Escape") closeAccountModal();
+  }
+}
+
+// Inicializar junto a los otros módulos
+document.addEventListener("DOMContentLoaded", () => {
+  loadCatalogo();
+  initSearch();
+  initGenreMenu();
+  initNavSearchToggle();
+  initAccountModal(); // 👈 aquí
+});
 
 /* =============== Utilidades =============== */
 function renderStars(v) {
