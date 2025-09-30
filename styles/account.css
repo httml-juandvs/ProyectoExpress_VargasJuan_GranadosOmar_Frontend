@@ -881,128 +881,133 @@ main {
   overflow-y: auto;
   padding-right: 8px;     /
 }
-/* ====== Reseñas en modal ====== */
-#reviewsSection {
-  margin-top: 20px;
-}
 
-#reviewsSection h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #fff;
-}
 
-#ratingStars {
+.profile-card {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-#ratingStars button {
-  font-size: 1.4rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #777;
-  transition: color 0.2s;
-}
-
-#ratingStars button.active,
-#ratingStars button:hover {
-  color: #ffcc00;
-}
-
-#reviewForm {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#reviewText {
-  width: 100%;
-  min-height: 80px;
-  resize: vertical;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #444;
+  align-items: center;
+  gap: 16px;
   background: #111;
-  color: #eee;
-  font-size: 0.95rem;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 30px;
 }
 
-#reviewSubmitBtn {
-  align-self: flex-start;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: #e50914;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #222;
 }
 
-#reviewSubmitBtn:hover {
-  background: #f6121d;
+/* ===== util ===== */
+.hidden { display: none !important; }
+
+/* ===== contenedor de tarjeta genérica ===== */
+.card {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 24px 0;
 }
 
-/* Estado / hints */
-#reviewStatusHint {
-  font-size: 0.85rem;
-  color: #aaa;
+/* ===== cabecera de perfil ===== */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #111;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
 }
+.profile-avatar {
+  width: 64px; height: 64px; border-radius: 50%; background:#222;
+}
+.muted { opacity:.75; }
 
-/* Lista de reseñas */
-#reviewsList {
+/* ===== menú de configuración ===== */
+.account-options {
   list-style: none;
-  padding: 0;
-  margin: 15px 0 0 0;
+  margin: 0; padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+/* botón que abre/cierra cada subform */
+.btn-toggle {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
-}
-
-.review-card {
   background: #1a1a1a;
-  border-radius: 8px;
-  padding: 10px 14px;
-}
-
-.review-card__head {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.review-card__user {
-  font-weight: 600;
+  border: 1px solid #444;
   color: #fff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter .2s ease, background .2s ease;
+  text-align: left;
+  font-weight: 600;
 }
-
-.review-card__rating {
-  color: #ffcc00;
-  font-size: 1rem;
+.btn-toggle:hover { filter: brightness(1.08); }
+.btn-toggle::after {
+  content: "▾";
+  opacity: .85;
+  transition: transform .2s ease;
 }
+.btn-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
 
-.review-card__text {
-  font-size: 0.95rem;
-  color: #ddd;
-}
-
-.review-card__actions {
+/* subforms */
+.form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: #0f0f0f;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
   margin-top: 8px;
 }
 
-.review-card__actions .link {
-  background: none;
-  border: none;
-  color: #bbb;
-  cursor: pointer;
-  margin-right: 10px;
-  font-size: 0.85rem;
+/* inputs */
+.input-group input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #2e2e2e;
+  background: #0f0f0f;
+  color: #fff;
+  outline: none;
 }
+.input-group input::placeholder { color:#a7a7a7; }
 
-.review-card__actions .link:hover {
-  text-decoration: underline;
+/* botón primario */
+.btn-primary {
+  background: #e50914;
+  border: 1px solid #ff0000;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
 }
+.btn-primary:hover { filter: brightness(1.08); }
+
+/* alertas */
+.form-alert { font-size:.9rem; color:#ff8a8a; }
+.form-alert.success { color:#7DFFA3; }
+
+/* ===== reseñas (por si no lo tenías ya) ===== */
+.reviews__list {
+  list-style: none; margin:0; padding:0; display:grid; gap:10px;
+}
+.review-card {
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #121212;
+  display: grid; gap: 6px;
+}
+.review-card__head { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.review-card__user { font-weight:600; }

@@ -222,17 +222,24 @@
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data?.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user || {}));
+        const authData = {
+          token: data.token,
+          user: {
+            id: data.user?.id,
+            name: data.user?.name || data.user?.username,
+            email: data.user?.email,
+            role: data.user?.role || "user"
+          }
+        };
+
+        localStorage.setItem("auth", JSON.stringify(authData));
 
         setFormAlert("Bienvenido 👋", "success");
 
-        // Redirección por rol (usando /pages/*)
-        const role = String(data?.user?.role || "user").toLowerCase();
+        const role = String(authData.user.role).toLowerCase();
         const dest = `${PAGES_BASE}/${role === "admin" ? "admin" : "home"}.html`;
 
         setTimeout(() => {
-          // No concatenamos manualmente origin + "../...", usamos una ruta absoluta válida
           window.location.href = dest;
         }, 800);
       } else {

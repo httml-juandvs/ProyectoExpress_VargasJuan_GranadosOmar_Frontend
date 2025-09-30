@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Cuenta — KarenFlix</title>
+  <link rel="stylesheet" href="../styles/account.css">
+  <link rel="icon" type="image/x-icon" href="../storage/kasita.webp">
+</head>
+<body>
+  <!-- NAV -->
+  <header class="home-nav solid">
+    <a href="./home.html" class="brand">
+      <img src="../storage/KarenFlix.png" alt="KarenFlix" />
+    </a>
+    <h1 style="margin-left:20px;">Mi Cuenta</h1>
+  </header>
+
+  <main style="padding: 100px 20px 40px; max-width: 900px; margin: auto;">
+    <!-- Perfil -->
+    <section id="profileSection" class="profile">
+      <div class="profile-card">
+        <img id="profileAvatar" src="../storage/iconamoon_profile-thin.png" alt="Avatar" class="profile-avatar">
+        <div>
+          <h2 id="profileName">Usuario</h2>
+          <p id="profileEmail" class="muted">correo@ejemplo.com</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Menú de configuración -->
+    <section class="card">
+      <h2>Configuración</h2>
+      <ul class="account-options">
+        <li>
+          <button type="button" class="btn-toggle" data-target="#formUsername">Editar nombre de usuario</button>
+          <form id="formUsername" class="form hidden">
+            <label class="input-group">
+              <input id="newUsername" type="text" placeholder="Nuevo usuario" />
+            </label>
+            <label class="input-group">
+              <input id="passForUsername" type="password" placeholder="Contraseña actual" />
+            </label>
+            <button class="btn-primary" type="submit">Guardar</button>
+            <div class="form-alert" id="alertUsername"></div>
+          </form>
+        </li>
+
+        <li>
+          <button type="button" class="btn-toggle" data-target="#formEmail">Cambiar correo</button>
+          <form id="formEmail" class="form hidden">
+            <label class="input-group">
+              <input id="newEmail" type="email" placeholder="Nuevo correo" />
+            </label>
+            <label class="input-group">
+              <input id="passForEmail" type="password" placeholder="Contraseña actual" />
+            </label>
+            <button class="btn-primary" type="submit">Guardar</button>
+            <div class="form-alert" id="alertEmail"></div>
+          </form>
+        </li>
+
+        <li>
+          <button type="button" class="btn-toggle" data-target="#formPassword">Cambiar contraseña</button>
+          <form id="formPassword" class="form hidden">
+            <label class="input-group">
+              <input id="currentPassword" type="password" placeholder="Contraseña actual" />
+            </label>
+            <label class="input-group">
+              <input id="newPassword" type="password" placeholder="Nueva contraseña" />
+            </label>
+            <label class="input-group">
+              <input id="confirmPassword" type="password" placeholder="Confirmar nueva contraseña" />
+            </label>
+            <button class="btn-primary" type="submit">Guardar</button>
+            <div class="form-alert" id="alertPassword"></div>
+          </form>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Mis Reseñas -->
+    <section id="myReviews" class="reviews">
+      <h2>Mis Reseñas</h2>
+      <ul id="userReviewsList" class="reviews__list">
+        <li class="muted">Cargando reseñas...</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="../scripts/account.js" defer></script>
+</body>
+</html>

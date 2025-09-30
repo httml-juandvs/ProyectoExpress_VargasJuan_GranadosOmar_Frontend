@@ -331,7 +331,7 @@ function initNavSearchToggle() {
 
 /* ================= Config ================= */
 // <- ajusta a tu backend
-const REVIEWS_PATH = "/resenas";    // p.ej. "/reseñas" en tu server, aquí sin ñ para URL
+const REVIEWS_PATH = "/review";    // p.ej. "/reseñas" en tu server, aquí sin ñ para URL
 
 /* =============== Auth helpers =============== */
 function getAuth() {
@@ -647,33 +647,56 @@ function renderStatusBadge(status) {
   const v = map[status] || map.pending;
   return `<span class="${v.cls}">${v.text}</span>`;
 }
-  function initGenreDropdown() {
+async function initGenreDropdown() {
   const btn = document.getElementById("genreBtn");
   const menu = document.getElementById("genreMenu");
   if (!btn || !menu) return;
 
-  // Lista de géneros (puedes venir del backend o poner fija)
-  const genres = [
-    "Acción", "Comedia", "Drama", "Terror", "Romance", "Ciencia ficción", "Documental", "Animación"
-  ];
+  try {
+    // 🔥 consulta al backend
+    const res = await fetch(`${API_BASE}/genres`);
+    if (!res.ok) throw new Error("Error al cargar géneros");
+    const genres = await res.json(); // asume [{_id,name}, ...]
 
-  // Renderiza botones dentro del menú
-  menu.innerHTML = genres.map(g => `<button type="button">${g}</button>`).join("");
+    // genera los botones dinámicos
+    menu.innerHTML = genres
+      .map(g => `<button type="button" data-genre="${g.name}">${g.name}</button>`)
+      .join("");
 
-  // Toggle abrir/cerrar menú
-  btn.addEventListener("click", () => {
-    const expanded = btn.getAttribute("aria-expanded") === "true";
-    btn.setAttribute("aria-expanded", String(!expanded));
-    menu.hidden = expanded; // alterna hidden
-  });
+    // toggle abrir/cerrar
+    btn.addEventListener("click", () => {
+      const expanded = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!expanded));
+      menu.hidden = expanded;
+    });
 
-  // Cerrar menú al click fuera
-  document.addEventListener("click", (e) => {
-    if (!menu.hidden && !btn.contains(e.target) && !menu.contains(e.target)) {
-      menu.hidden = true;
-      btn.setAttribute("aria-expanded", "false");
-    }
-  });
+    // click en un género → búsqueda
+    menu.querySelectorAll("button").forEach(b => {
+      b.addEventListener("click", async () => {
+        const genre = b.dataset.genre;
+        try {
+          const res = await fetch(`${API_BASE}/catalogo/genre/${encodeURIComponent(genre)}`);
+          const results = await res.json();
+          localStorage.setItem("SEARCH_RESULTS", JSON.stringify(results));
+          window.location.href = "./search.html?genre=" + encodeURIComponent(genre);
+        } catch (err) {
+          console.error("Error buscando por género:", err);
+        }
+      });
+    });
+
+    // cerrar al click fuera
+    document.addEventListener("click", (e) => {
+      if (!menu.hidden && !btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.hidden = true;
+        btn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+  } catch (err) {
+    console.error("Error cargando menú de géneros:", err);
+    menu.innerHTML = `<p class="muted">No se pudieron cargar los géneros</p>`;
+  }
 }
 
 /* =============== Modal Cuenta =============== */
@@ -708,10 +731,6 @@ function initAccountModal() {
     window.location.href = "./account.html"; // o la ruta que uses
   });
 
-  document.getElementById("passwordBtn")?.addEventListener("click", () => {
-    window.location.href = "./password.html"; // página para cambiar contraseña
-  });
-
   document.getElementById("supportBtn")?.addEventListener("click", () => {
     window.location.href = "./support.html"; // página de soporte
   });
@@ -721,7 +740,7 @@ function initAccountModal() {
     localStorage.removeItem("auth");
 
     // Redirigir al index
-    window.location.href = "./index.html";
+    window.location.href = "../index.html";
   });
 }
 

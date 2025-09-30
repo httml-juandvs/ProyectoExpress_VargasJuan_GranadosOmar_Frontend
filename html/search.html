@@ -8,64 +8,93 @@
   <!-- Poppins -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
+  <link rel="icon" type="image/x-icon" href="../storage/kasita.webp">
   <link rel="stylesheet" href="../styles/home.css" />
 </head>
 <body>
-  <!-- NAV con logo, inicio, lupa y usuario -->
+  <!-- NAV -->
   <header class="home-nav solid">
-    <!-- Logo -->
     <a href="./home.html" class="brand" aria-label="KarenFlix — Inicio">
       <img src="../storage/KarenFlix.png" alt="KarenFlix" />
     </a>
 
-    <!-- Menú -->
     <nav class="main" aria-label="Secciones">
       <a class="item" href="./home.html">Inicio</a>
     </nav>
 
-    <!-- Iconos (lupa + usuario) -->
     <div class="nav-icons">
-      <!-- Botón lupa -->
       <button class="icon-btn" id="searchBtn" aria-label="Buscar">
         <img class="icon" src="../storage/carbon_search.png" width="28" height="28" alt="">
       </button>
 
-      <!-- Form de búsqueda (aparece al dar click en la lupa) -->
       <form id="navSearch" class="nav-search" role="search" aria-hidden="true">
         <input id="searchInput" type="search" name="q" placeholder="Buscar títulos..." autocomplete="off" inputmode="search" />
         <button id="searchSubmit" type="submit" aria-label="Buscar">↵</button>
       </form>
 
-      <!-- Icono usuario -->
       <a class="icon-btn round" href="./account.html" aria-label="Cuenta">
         <img class="icon" src="../storage/codicon_account.png" width="28" height="28" alt="">
       </a>
     </div>
   </header>
 
-  <!-- Contenido principal -->
+  <!-- RESULTADOS -->
   <main class="search-page">
     <h1 class="row-title">Resultados de búsqueda</h1>
     <section class="row">
-      <div class="row-track" id="searchResults"></div>
+      <div class="row-inner">
+        <button class="row-nav prev">❮</button>
+        <div class="row-track" id="searchResults"></div>
+        <button class="row-nav next">❯</button>
+      </div>
     </section>
   </main>
 
-  <!-- Solo search.js, nada de home.js -->
-  <!-- Modal de detalle -->
+  <!-- MODAL DETALLE -->
   <div id="detailModal" class="modal" hidden>
-      <div class="modal-content">
-          <button class="modal-close" aria-label="Cerrar">✕</button>
-          <div class="modal-backdrop"></div>
-          <div class="modal-body">
-              <h2 id="modalTitle"></h2>
-              <p id="modalMeta"></p>
-              <p id="modalRating"></p>
-              <p id="modalDesc"></p>
-            </div>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Cerrar">✕</button>
+      <div class="modal-backdrop"></div>
+      <div class="modal-body">
+        <div class="modal-left">
+          <img id="modalPoster" src="../storage/poster2.jpg" alt="Póster" />
         </div>
+        <div class="modal-right">
+          <h2 id="modalTitle"></h2>
+          <p id="modalMeta"></p>
+          <p id="modalRating"></p>
+          <p id="modalDesc"></p>
+
+          <!-- Reseñas -->
+          <section id="reviewsSection" data-item-id="">
+            <h3>Reseñas</h3>
+            <div id="ratingStars" class="stars">
+              <button type="button" data-score="1">★</button>
+              <button type="button" data-score="2">★</button>
+              <button type="button" data-score="3">★</button>
+              <button type="button" data-score="4">★</button>
+              <button type="button" data-score="5">★</button>
+            </div>
+            <form id="reviewForm">
+              <input type="hidden" id="reviewId" />
+              <textarea id="reviewText" placeholder="Escribe tu reseña..."></textarea>
+              <button id="reviewSubmitBtn" type="submit">Enviar reseña</button>
+              <button id="reviewCancelBtn" type="button" hidden>Cancelar</button>
+              <p id="reviewStatusHint" class="muted"></p>
+            </form>
+            <ul id="reviewsList"></ul>
+          </section>
+
+          <!-- Likes -->
+          <div class="like-dislike">
+            <button id="likeBtn">👍</button>
+            <button id="dislikeBtn">👎</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <script src="../scripts/search.js" defer></script>
+  </div>
+
+  <script src="../scripts/search.js" defer></script>
 </body>
 </html>
