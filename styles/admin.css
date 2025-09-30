@@ -176,3 +176,26 @@ label{ font-size:12px; color:var(--muted); }
   .row{ grid-template-columns:1fr; }
   .search{ min-width:0; width:100%; }
 }
+
+.modal {
+  display: none; /* oculto por defecto */
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open {
+  display: flex; /* 👈 se mostrará cuando JS agregue .open */
+}
+
+.sheet {
+  background: #1e1e1e;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  padding: 16px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}

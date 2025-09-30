@@ -3,7 +3,7 @@
 // =======================
 
 // ------- Config -------
-const HTML_BASE = "/html"; // dónde viven home.html, admin.html, etc.
+const HTML_BASE = "/html";
 const API = {
   BASE_URL: (localStorage.getItem("KARENFLIX_API") || "http://localhost:3000/api/v1").replace(/\/$/, ""),
   paths: {
@@ -13,7 +13,7 @@ const API = {
   }
 };
 
-// ------- Helpers UI (defínelos ANTES de las vistas) -------
+// ------- Helpers UI -------
 function KPI(label, val, tone){
   return `<div class="card kpi">
     <div>
@@ -42,21 +42,22 @@ function formatDate(d){
 
 // ------- Auth -------
 const Auth = {
-  getToken(){ return localStorage.getItem("token"); },
-  getUser(){ try { return JSON.parse(localStorage.getItem("user")||"null"); } catch { return null } },
-  clear(){ localStorage.removeItem("token"); localStorage.removeItem("user"); },
+  getAuth(){ 
+    try { return JSON.parse(localStorage.getItem("auth")||"null"); } catch { return null } 
+  },
+  getToken(){ return this.getAuth()?.token || ""; },
+  getUser(){ return this.getAuth()?.user || null; },
+  clear(){ localStorage.removeItem("auth"); },
   isAdmin(){
-    const t = this.getToken();
     const u = this.getUser();
-    return !!t && u && String(u.role||"").toLowerCase()==="admin";
+    return !!this.getToken() && u && String(u.role||"").toLowerCase()==="admin";
   }
 };
 
 // ------- HTTP -------
 async function http(path, opts = {}) {
   const url = API.BASE_URL + path;
-  const token = localStorage.getItem("token") || "";
-  if (!token) console.warn("[admin] NO hay token en localStorage para", location.origin);
+  const token = Auth.getToken();
 
   const res = await fetch(url, {
     ...opts,
@@ -76,7 +77,6 @@ async function http(path, opts = {}) {
   if (res.status === 204) return null;
   return res.json();
 }
-
 
 // ------- Nav -------
 const Routes = [
@@ -121,34 +121,27 @@ async function Dashboard(){
     http(API.paths.reviews)
   ]);
 
-  const countFrom = (s) => {
+  function countFrom(s) {
     if (s.status !== "fulfilled" || !s.value) return 0;
     const v = s.value;
     if (Array.isArray(v)) return v.length;
+    if (Array.isArray(v.users)) return v.users.length;
     if (Array.isArray(v.items)) return v.items.length;
+    if (Array.isArray(v.results)) return v.results.length;
     if (typeof v.total === "number") return v.total;
     return 0;
-  };
+  }
 
   const users   = countFrom(usersRes);
   const titles  = countFrom(titlesRes);
   const reviews = countFrom(reviewsRes);
-  const pending = 0;
 
   return `
     <section class="grid">
       <div class="cards">
         ${KPI("Usuarios",   users)}
         ${KPI("Títulos",    titles)}
-        ${KPI("Pendientes", pending, 'pending')}
         ${KPI("Reseñas",    reviews)}
-      </div>
-      <div class="card">
-        <div class="toolbar">
-          <strong>Actividad reciente</strong>
-          <span class="pill">cliente</span>
-        </div>
-        <div class="muted">Sin endpoint de logs configurado.</div>
       </div>
     </section>
   `;
@@ -162,17 +155,19 @@ async function Users(){
     return `<div class="card"><h3>Usuarios</h3><pre>${escapeHtml(JSON.stringify(data,null,2))}</pre></div>`;
   }
 
-  const rows = list.map(u=>`
+  const rows = list.map(u=>{
+    const uid = (typeof u._id === "object" && u._id.$oid) ? u._id.$oid : String(u._id || u.id || "");
+    return `
     <tr>
       <td>${escapeHtml(u.email || u.username || "")}</td>
       <td><span class="pill">${escapeHtml((u.role||"user"))}</span></td>
       <td>${u.banned ? '<span class="status rejected">baneado</span>' : '<span class="status approved">ok</span>'}</td>
       <td>${formatDate(u.createdAt)}</td>
       <td style="text-align:right">
-        ${(u._id || u.id) ? `<button class="btn" onclick="openUser('${u._id || u.id}')">Editar</button>` : ""}
+        ${uid ? `<button class="btn" onclick="openUser('${uid}')">Editar</button>` : ""}
       </td>
-    </tr>
-  `).join("");
+    </tr>`;
+  }).join("");
 
   return `
     <section class="grid">
@@ -195,17 +190,19 @@ async function Titles(){
   if (!Array.isArray(list)) {
     return `<div class="card"><h3>Títulos</h3><pre>${escapeHtml(JSON.stringify(data,null,2))}</pre></div>`;
   }
-  const rows = list.map(t=>`
+  const rows = list.map(t=>{
+    const tid = (typeof t._id === "object" && t._id.$oid) ? t._id.$oid : String(t._id || t.id || "");
+    return `
     <tr>
       <td>${escapeHtml(t.title || t.name || t.titulo || "")}</td>
       <td>${t.year || t.anio || ""}</td>
       <td><span class="pill">${escapeHtml(t.category || t.categoria || "-")}</span></td>
       <td><span class="status ${t.status||'approved'}">${escapeHtml(t.status||'ok')}</span></td>
       <td style="text-align:right">
-        ${(t._id||t.id) ? `<button class="btn" onclick="editTitle('${t._id || t.id}')">Editar</button>` : ""}
+        ${tid ? `<button class="btn" onclick="editTitle('${tid}')">Editar</button>` : ""}
       </td>
-    </tr>
-  `).join("");
+    </tr>`;
+  }).join("");
 
   return `
     <section class="grid">
@@ -262,46 +259,119 @@ window.deleteReview = async function(id){
   await http(`${API.paths.reviews}/${id}`, { method:'DELETE' });
   Router();
 };
+
 window.openUser = async function(id){
-  const data = await http(API.paths.users);
+  try {
+    const u = await http(`${API.paths.users}/${id}`); // 👈 directo al endpoint con token
+    if (!u) return alert("Usuario no encontrado");
+
+    openModal("Editar usuario", `
+      <div class="row">
+        <div class="col">
+          <label>Nombre</label>
+          <input class="input" id="uName" value="${escapeHtml(u.name || '')}" />
+        </div>
+        <div class="col">
+          <label>Email</label>
+          <input class="input" id="uEmail" value="${escapeHtml(u.email||'')}" disabled/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col">
+          <label>Rol</label>
+          <select id="uRole">
+            <option value="user"  ${u.role==='user'?'selected':''}>user</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>admin</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Estado</label>
+          <select id="uBanned">
+            <option value="false" ${!u.banned?'selected':''}>Activo</option>
+            <option value="true"  ${u.banned?'selected':''}>Baneado</option>
+          </select>
+        </div>
+      </div>
+    `,
+    `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn--accent" onclick="saveUser('${id}')">Guardar</button>`);
+  } catch (err) {
+    alert("No se pudo cargar el usuario: " + err.message);
+  }
+};
+
+
+window.saveUser = async function(id){
+  const name   = document.getElementById('uName').value.trim();
+  const role   = document.getElementById('uRole').value;
+  const banned = document.getElementById('uBanned').value === 'true';
+
+  try {
+    await http(`${API.paths.users}/${id}`, {
+      method:'PATCH',
+      body: JSON.stringify({ name, role, banned })
+    });
+    closeModal();
+    Router();
+  } catch (e) {
+    alert("No se pudo actualizar el usuario: " + e.message);
+  }
+};
+
+window.editTitle = async function(id){
+  const data = await http(API.paths.titles);
   const list = Array.isArray(data) ? data : (data.items || []);
-  const u = list.find(x=>(x._id||x.id)===id);
-  if(!u) return;
-  openModal("Editar usuario", `
+  const t = list.find(x=>{
+    const tid = (typeof x._id === "object" && x._id.$oid) ? x._id.$oid : String(x._id || x.id || "");
+    return tid === String(id);
+  });
+  if(!t) return;
+
+  openModal("Editar título", `
     <div class="row">
       <div class="col">
-        <label>Email</label>
-        <input class="input" id="uEmail" value="${escapeHtml(u.email||'')}" disabled/>
+        <label>Título</label>
+        <input class="input" id="tTitle" value="${escapeHtml(t.title||t.name||'')}" />
       </div>
       <div class="col">
-        <label>Rol</label>
-        <select id="uRole">
-          <option ${u.role==='user'?'selected':''}>user</option>
-          <option ${u.role==='admin'?'selected':''}>admin</option>
-        </select>
+        <label>Año</label>
+        <input class="input" id="tYear" value="${escapeHtml(t.year||t.anio||'')}" />
       </div>
     </div>
     <div class="row" style="margin-top:8px">
       <div class="col">
+        <label>Categoría</label>
+        <input class="input" id="tCategory" value="${escapeHtml(t.category||t.categoria||'')}" />
+      </div>
+      <div class="col">
         <label>Estado</label>
-        <select id="uBanned">
-          <option value="false" ${!u.banned?'selected':''}>Activo</option>
-          <option value="true"  ${u.banned?'selected':''}>Baneado</option>
+        <select id="tStatus">
+          <option value="approved" ${t.status==='approved'?'selected':''}>approved</option>
+          <option value="pending"  ${t.status==='pending'?'selected':''}>pending</option>
+          <option value="rejected" ${t.status==='rejected'?'selected':''}>rejected</option>
         </select>
       </div>
     </div>
   `,
   `<button class="btn btn--ghost" onclick="closeModal()">Cancelar</button>
-   <button class="btn btn--accent" onclick="saveUser('${id}')">Guardar</button>`);
+   <button class="btn btn--accent" onclick="saveTitle('${id}')">Guardar</button>`);
 };
-window.saveUser = async function(id){
-  const role = document.getElementById('uRole').value;
-  const banned = document.getElementById('uBanned').value === 'true';
-  try{
-    await http(`/users/${id}`, { method:'PATCH', body: JSON.stringify({role,banned}) });
-    closeModal(); Router();
-  }catch(e){
-    alert("No se pudo actualizar el usuario: " + e.message);
+
+window.saveTitle = async function(id){
+  const title    = document.getElementById('tTitle').value.trim();
+  const year     = document.getElementById('tYear').value.trim();
+  const category = document.getElementById('tCategory').value.trim();
+  const status   = document.getElementById('tStatus').value;
+
+  try {
+    await http(`${API.paths.titles}/${id}`, {
+      method:'PATCH',
+      body: JSON.stringify({ title, year, category, status })
+    });
+    closeModal();
+    Router();
+  } catch(e) {
+    alert("No se pudo actualizar el título: " + e.message);
   }
 };
 
