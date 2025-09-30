@@ -1006,3 +1006,8 @@ main {
 .review-card__actions .link:hover {
   text-decoration: underline;
 }
+.like-dislike button.active {
+  color: red;
+  transform: scale(1.2);
+  transition: all 0.2s ease;
+}

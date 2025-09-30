@@ -1,5 +1,5 @@
 const API_BASE = "http://localhost:3000/api/v1";
-const REVIEWS_PATH = "/review";
+const REVIEWS_PATH = "/reviews";
 
 /* =============== Utils =============== */
 const $  = (sel, root = document) => root.querySelector(sel);
@@ -115,6 +115,7 @@ function openModal(item) {
   modal.removeAttribute("hidden");
   modal.querySelector(".modal-close").onclick = () => closeModal();
   modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+  setupLikeDislike(modal, item._id || item.tmdb_id);
   document.addEventListener("keydown", escClose);
 }
 function closeModal() {
@@ -129,7 +130,8 @@ function escClose(e) {
 }
 
 /* =============== Reseñas =============== */
-let ratingCurrent = 0;
+let scoreCurrent = 0;
+
 function setupReviewsUI(modalRoot) {
   const auth = getAuth();
   const reviewsSection = modalRoot.querySelector("#reviewsSection");
@@ -152,66 +154,77 @@ function setupReviewsUI(modalRoot) {
     statusHint.textContent = "";
   }
 
+  // ⭐ click estrellas
   function onStarClick(e) {
     const btn = e.target.closest("button[data-score]");
     if (!btn) return;
-    ratingCurrent = Number(btn.dataset.score) || 0;
+    scoreCurrent = Number(btn.dataset.score) || 0;
     [...ratingStars.querySelectorAll("button")].forEach(b => {
-      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
+      b.classList.toggle("active", Number(b.dataset.score) <= scoreCurrent);
     });
   }
   ratingStars.addEventListener("click", onStarClick);
   ratingStars._handler = onStarClick;
 
   async function onSubmit(e) {
-    e.preventDefault();
-    if (!auth) return;
-    const itemId = reviewsSection.dataset.itemId;
-    const text = reviewText.value.trim();
-    if (!ratingCurrent || !text) {
-      statusHint.textContent = "Calificación y texto son obligatorios.";
-      return;
-    }
-    submitBtn.disabled = true;
-    statusHint.textContent = "Enviando…";
+  e.preventDefault();
+  if (!auth) return;
 
-    const body = { itemId, rating: ratingCurrent, text };
-    const isEdit = !!reviewIdInp.value;
-    const url = isEdit
-      ? `${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(reviewIdInp.value)}`
-      : `${API_BASE}${REVIEWS_PATH}`;
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      reviewIdInp.value = "";
-      cancelBtn.hidden = true;
-      submitBtn.textContent = "Enviar reseña";
-      statusHint.textContent = "¡Reseña enviada!";
-      ratingCurrent = 0;
-      [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
-      reviewText.value = "";
-      await loadReviews(itemId, reviewsList);
-    } catch (err) {
-      statusHint.textContent = "Error al enviar la reseña.";
-    } finally {
-      submitBtn.disabled = false;
-    }
+  const itemId = reviewsSection.dataset.itemId;
+  const text = reviewText.value.trim();
+  if (!scoreCurrent || !text) {
+    statusHint.textContent = "Calificación y texto son obligatorios.";
+    return;
   }
+  submitBtn.disabled = true;
+  statusHint.textContent = "Enviando…";
+
+  const body = { 
+    movieId: itemId, 
+    title: modalRoot.querySelector("#modalTitle")?.textContent || "",
+    comment: text, 
+    rating: scoreCurrent 
+  };
+
+  const isEdit = !!reviewIdInp.value;
+  const url = isEdit
+    ? `${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(reviewIdInp.value)}`
+    : `${API_BASE}${REVIEWS_PATH}`;
+  const method = isEdit ? "PATCH" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    reviewIdInp.value = "";
+    cancelBtn.hidden = true;
+    submitBtn.textContent = "Enviar reseña";
+    statusHint.textContent = "¡Reseña enviada!";
+    scoreCurrent = 0;
+    [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
+    reviewText.value = "";
+    await loadReviews(itemId, reviewsList);
+  } catch (err) {
+    console.error("❌ Error al enviar reseña:", err);
+    statusHint.textContent = "Error al enviar la reseña.";
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
   reviewForm.addEventListener("submit", onSubmit);
   reviewForm._submitHandler = onSubmit;
 
+  // ❌ cancelar edición
   function onCancelEdit() {
     reviewIdInp.value = "";
     cancelBtn.hidden = true;
     submitBtn.textContent = "Enviar reseña";
     reviewText.value = "";
-    ratingCurrent = 0;
+    scoreCurrent = 0;
     [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
     statusHint.textContent = "";
   }
@@ -223,14 +236,15 @@ function setupReviewsUI(modalRoot) {
   function onEdit(review) {
     if (!auth || auth.user?.id !== review.userId) return;
     reviewIdInp.value = review.id;
-    reviewText.value = review.text || "";
-    ratingCurrent = Number(review.rating) || 0;
+    reviewText.value = review.comment || "";
+    scoreCurrent = Number(review.score) || 0;
     [...ratingStars.querySelectorAll("button")].forEach(b => {
-      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
+      b.classList.toggle("active", Number(b.dataset.score) <= scoreCurrent);
     });
     cancelBtn.hidden = false;
     submitBtn.textContent = "Guardar cambios";
   }
+
   async function onDelete(review) {
     if (!auth || auth.user?.id !== review.userId) return;
     if (!confirm("¿Eliminar tu reseña?")) return;
@@ -246,6 +260,7 @@ function setupReviewsUI(modalRoot) {
     }
   }
 }
+
 function teardownReviewsUI(modalRoot) {
   const ratingStars = modalRoot.querySelector("#ratingStars");
   const reviewForm  = modalRoot.querySelector("#reviewForm");
@@ -263,23 +278,18 @@ function teardownReviewsUI(modalRoot) {
     delete cancelBtn._handler;
   }
 }
+
 async function loadReviews(itemId, listEl, handlers = {}) {
-  const auth = getAuth();
   try {
-    const res = await fetch(`${API_BASE}${REVIEWS_PATH}?itemId=${encodeURIComponent(itemId)}`, {
-      headers: { "Accept": "application/json", ...authHeaders() }
-    });
+    const res = await fetch(`${API_BASE}${REVIEWS_PATH}/by-title/${encodeURIComponent(itemId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const all = await res.json();
-    const approved = all.filter(r => r.status === "approved");
-    const mineExtra = auth ? all.filter(r => r.userId === auth.user.id && r.status !== "approved") : [];
-    const visible = approved.concat(mineExtra)
-      .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i);
-    renderReviews(listEl, visible, handlers, auth);
+    const { items } = await res.json();
+    renderReviews(listEl, items, handlers, getAuth());
   } catch {
     listEl.innerHTML = `<li class="muted">No se pudieron cargar las reseñas.</li>`;
   }
 }
+
 function renderReviews(listEl, reviews, { onEdit, onDelete }, auth) {
   if (!reviews?.length) {
     listEl.innerHTML = `<li class="muted">Sé el primero en reseñar.</li>`;
@@ -292,9 +302,9 @@ function renderReviews(listEl, reviews, { onEdit, onDelete }, auth) {
     li.innerHTML = `
       <div class="review-card__head">
         <span class="review-card__user">${escapeHtml(r.userName || "Usuario")}</span>
-        <span class="review-card__rating">${"★".repeat(r.rating || 0)}${"☆".repeat(Math.max(0, 5 - (r.rating || 0)))}</span>
+        <span class="review-card__rating">${"★".repeat(r.score || 0)}${"☆".repeat(Math.max(0, 5 - (r.score || 0)))}</span>
       </div>
-      <p class="review-card__text">${escapeHtml(r.text || "")}</p>
+      <p class="review-card__text">${escapeHtml(r.comment || "")}</p>
       <div class="review-card__actions">
         ${auth && auth.user?.id === r.userId ? `
           <button class="link" data-action="edit">Editar</button>
@@ -343,6 +353,50 @@ async function loadSearchResults() {
     container.innerHTML = `<p style="color:#ff8a8a;padding:20px;">Ocurrió un error cargando los resultados.</p>`;
   }
 }
+
+/* =============== Likes/Dislikes =============== */
+function setupLikeDislike(modalRoot, itemId) {
+  const likeBtn = modalRoot.querySelector("#likeBtn");
+  const dislikeBtn = modalRoot.querySelector("#dislikeBtn");
+  const auth = getAuth();
+
+  if (!auth) {
+    likeBtn.disabled = true;
+    dislikeBtn.disabled = true;
+    return;
+  }
+
+  async function sendAction(action) {
+    try {
+      const res = await fetch(`${API_BASE}/catalogo/${itemId}/like`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders()
+        },
+        body: JSON.stringify({ action })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      likeBtn.classList.toggle("active", action === "like");
+      dislikeBtn.classList.toggle("active", action === "dislike");
+
+      console.log("✅ Likes:", data.likes, "Dislikes:", data.dislikes);
+    } catch (err) {
+      console.error("❌ Error guardando like/dislike:", err);
+    }
+  }
+
+  likeBtn.onclick = () => sendAction(
+    likeBtn.classList.contains("active") ? "none" : "like"
+  );
+  dislikeBtn.onclick = () => sendAction(
+    dislikeBtn.classList.contains("active") ? "none" : "dislike"
+  );
+}
+
+/* =============== Rows scroll =============== */
 function initRow(section) {
   const track = section.querySelector(".row-track");
   const prev = section.querySelector(".row-nav.prev");

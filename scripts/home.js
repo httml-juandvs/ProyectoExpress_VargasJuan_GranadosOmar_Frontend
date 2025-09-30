@@ -377,6 +377,7 @@ function openModal(item) {
   modal.removeAttribute("hidden");
   modal.querySelector(".modal-close").onclick = () => closeModal();
   modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+  setupLikeDislike(modal, item._id || item.tmdb_id);
   document.addEventListener("keydown", escClose);
 }
 
@@ -393,211 +394,46 @@ function closeModal() {
 function escClose(e) {
   if (e.key === "Escape") closeModal();
 }
-
-/* =============== Reseñas: UI y lógica =============== 
-let ratingCurrent = 0;
-
-function setupReviewsUI(modalRoot) {
+function setupLikeDislike(modalRoot, itemId) {
+  const likeBtn = modalRoot.querySelector("#likeBtn");
+  const dislikeBtn = modalRoot.querySelector("#dislikeBtn");
   const auth = getAuth();
-  const reviewsSection = modalRoot.querySelector("#reviewsSection");
-  const ratingStars = modalRoot.querySelector("#ratingStars");
-  const reviewForm  = modalRoot.querySelector("#reviewForm");
-  const reviewText  = modalRoot.querySelector("#reviewText");
-  const reviewIdInp = modalRoot.querySelector("#reviewId");
-  const submitBtn   = modalRoot.querySelector("#reviewSubmitBtn");
-  const cancelBtn   = modalRoot.querySelector("#reviewCancelBtn");
-  const statusHint  = modalRoot.querySelector("#reviewStatusHint");
-  const reviewsList = modalRoot.querySelector("#reviewsList");
 
-  // Si no hay login, deshabilita form
   if (!auth) {
-    reviewText.disabled = true;
-    submitBtn.disabled = true;
-    statusHint.textContent = "Inicia sesión para escribir una reseña.";
-  } else {
-    reviewText.disabled = false;
-    submitBtn.disabled = false;
-    statusHint.textContent = "";
+    likeBtn.disabled = true;
+    dislikeBtn.disabled = true;
+    return;
   }
 
-  // Estrellas: click handler
-  function onStarClick(e) {
-    const btn = e.target.closest("button[data-score]");
-    if (!btn) return;
-    ratingCurrent = Number(btn.dataset.score) || 0;
-    [...ratingStars.querySelectorAll("button")].forEach(b => {
-      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
-    });
-  }
-  ratingStars.addEventListener("click", onStarClick);
-  ratingStars._handler = onStarClick; // para teardown
-
-  // Submit (crear/editar)
-  async function onSubmit(e) {
-    e.preventDefault();
-    if (!auth) return;
-
-    const itemId = reviewsSection.dataset.itemId;
-    const text = reviewText.value.trim();
-    if (!ratingCurrent || !text) {
-      statusHint.textContent = "Calificación y texto son obligatorios.";
-      return;
-    }
-
-    submitBtn.disabled = true;
-    statusHint.textContent = "Enviando…";
-
-    const body = {
-      itemId,
-      rating: ratingCurrent,
-      text
-    };
-
-    const isEdit = !!reviewIdInp.value;
-    const url = isEdit
-      ? `${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(reviewIdInp.value)}`
-      : `${API_BASE}${REVIEWS_PATH}`;
-    const method = isEdit ? "PUT" : "POST";
-
+  async function sendAction(action) {
     try {
-      const res = await fetch(url, {
-        method,
+      const res = await fetch(`${API_BASE}/catalogo/${itemId}/like`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           ...authHeaders()
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ action })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // Limpia form y re-carga
-      reviewIdInp.value = "";
-      cancelBtn.hidden = true;
-      submitBtn.textContent = "Enviar reseña";
-      statusHint.textContent = "¡Reseña enviada para aprobación!";
-      ratingCurrent = 0;
-      [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
-      reviewText.value = "";
-      await loadReviews(itemId, reviewsList);
+      const data = await res.json();
+
+      // toggle visual
+      likeBtn.classList.toggle("active", action === "like");
+      dislikeBtn.classList.toggle("active", action === "dislike");
+
+      console.log("✅ Likes:", data.likes, "Dislikes:", data.dislikes);
     } catch (err) {
-      statusHint.textContent = "Error al enviar la reseña.";
-      console.error(err);
-    } finally {
-      submitBtn.disabled = false;
+      console.error("❌ Error guardando like/dislike:", err);
     }
   }
-  reviewForm.addEventListener("submit", onSubmit);
-  reviewForm._submitHandler = onSubmit;
 
-  // Cancelar edición
-  function onCancelEdit() {
-    reviewIdInp.value = "";
-    cancelBtn.hidden = true;
-    submitBtn.textContent = "Enviar reseña";
-    reviewText.value = "";
-    ratingCurrent = 0;
-    [...ratingStars.querySelectorAll("button")].forEach(b => b.classList.remove("active"));
-    statusHint.textContent = "";
-  }
-  cancelBtn.addEventListener("click", onCancelEdit);
-  cancelBtn._handler = onCancelEdit;
-
-  // Cargar reseñas visibles + de usuario
-  const itemId = reviewsSection.dataset.itemId;
-  loadReviews(itemId, reviewsList, { onEdit, onDelete });
-
-  // Handlers para botones de cada tarjeta
-  function onEdit(review) {
-    // Solo permitir si es del usuario
-    const auth = getAuth();
-    if (!auth || auth.user?.id !== review.userId) return;
-
-    // Prefill
-    reviewIdInp.value = review.id;
-    reviewText.value = review.text || "";
-    ratingCurrent = Number(review.rating) || 0;
-    [...ratingStars.querySelectorAll("button")].forEach(b => {
-      b.classList.toggle("active", Number(b.dataset.score) <= ratingCurrent);
-    });
-    cancelBtn.hidden = false;
-    submitBtn.textContent = "Guardar cambios";
-    statusHint.textContent = review.status !== "approved"
-      ? "Tu reseña está pendiente de aprobación."
-      : "";
-  }
-
-  async function onDelete(review) {
-    const auth = getAuth();
-    if (!auth || auth.user?.id !== review.userId) return;
-    if (!confirm("¿Eliminar tu reseña?")) return;
-
-    try {
-      const res = await fetch(`${API_BASE}${REVIEWS_PATH}/${encodeURIComponent(review.id)}`, {
-        method: "DELETE",
-        headers: { ...authHeaders() }
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await loadReviews(itemId, reviewsList, { onEdit, onDelete });
-      // Si estabas editando esa misma reseña, resetea form
-      if (document.querySelector("#reviewId").value === review.id) {
-        cancelBtn.click();
-      }
-    } catch (err) {
-      alert("Error eliminando la reseña.");
-      console.error(err);
-    }
-  }
-}
-
-function teardownReviewsUI(modalRoot) {
-  const ratingStars = modalRoot.querySelector("#ratingStars");
-  const reviewForm  = modalRoot.querySelector("#reviewForm");
-  const cancelBtn   = modalRoot.querySelector("#reviewCancelBtn");
-
-  if (ratingStars?._handler) {
-    ratingStars.removeEventListener("click", ratingStars._handler);
-    delete ratingStars._handler;
-  }
-  if (reviewForm?._submitHandler) {
-    reviewForm.removeEventListener("submit", reviewForm._submitHandler);
-    delete reviewForm._submitHandler;
-  }
-  if (cancelBtn?._handler) {
-    cancelBtn.removeEventListener("click", cancelBtn._handler);
-    delete cancelBtn._handler;
-  }
-}
-
-/* =============== Carga / Render de reseñas =============== 
-async function loadReviews(itemId, listEl, handlers = {}) {
-  const auth = getAuth();
-  const isAdmin = !!auth?.user?.isAdmin;
-
-  try {
-    const res = await fetch(`${API_BASE}${REVIEWS_PATH}?itemId=${encodeURIComponent(itemId)}`, {
-      headers: { "Accept": "application/json", ...authHeaders() }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const all = await res.json(); // [{id,userId,userName,rating,text,status,createdAt},...]
-
-    // 1) Las aprobadas se muestran siempre
-    const approved = all.filter(r => r.status === "approved");
-
-    // 2) Si el usuario tiene una reseña pendiente/rechazada, también la ve (con badge)
-    const mineExtra = auth ? all.filter(r => r.userId === auth.user.id && r.status !== "approved") : [];
-
-    // 3) Si es admin y estás en este UI, podría ver todas, pero:
-    //    Mantendremos la vista pública + las suyas. El módulo admin aprueba.
-    const visible = approved.concat(mineExtra)
-      // quitar duplicados si el mismo id aparece en ambos arrays
-      .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i)
-      // ordenar por fecha desc si viene createdAt
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-    renderReviews(listEl, visible, handlers, auth);
-  } catch (err) {
-    console.error(err);
-    listEl.innerHTML = `<li class="muted">No se pudieron cargar las reseñas.</li>`;
-  }
+  likeBtn.onclick = () => sendAction(
+    likeBtn.classList.contains("active") ? "none" : "like"
+  );
+  dislikeBtn.onclick = () => sendAction(
+    dislikeBtn.classList.contains("active") ? "none" : "dislike"
+  );
 }
 
 /* =============== Dropdown =============== */

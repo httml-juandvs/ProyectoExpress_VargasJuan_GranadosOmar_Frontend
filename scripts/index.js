@@ -222,15 +222,16 @@
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data?.token) {
-        const authData = {
-          token: data.token,
-          user: {
-            id: data.user?.id,
-            name: data.user?.name || data.user?.username,
-            email: data.user?.email,
-            role: data.user?.role || "user"
-          }
-        };
+  const authData = {
+    token: data.token,
+    sub: data.user?.id,   // 👈 añadimos esto para que el frontend tenga `sub`
+    user: {
+      id: data.user?.id,
+      name: data.user?.name || data.user?.username,
+      email: data.user?.email,
+      role: data.user?.role || "user"
+    }
+  };
 
         localStorage.setItem("auth", JSON.stringify(authData));
 
