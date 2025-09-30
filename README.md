@@ -125,7 +125,12 @@ El backend se encuentra en un repositorio separado:
 👉 [KarenFlix Backend](https://github.com/Lazar2422/Proyecto_S1_Express_GranadosOmar_VargarJuan.git)
 
 ----------
+## ⭐️ Figma
 
+La maquetación realizada en Figma:  
+👉 [KarenFlix Diseño](https://www.figma.com/design/ZW88NP5Vk35f54b5aoDPum/KarenFlix?node-id=0-1&t=KdRg8q2YZF2x9JmK-1)
+
+----------
 ## 📹 Video de Presentación
 
 🔗 [KarenFlix Sustentación](https://drive.google.com/drive/folders/1uAJmRcerUQr_tQOSCBTLXSMw1p0MvwwX?usp=sharing) – Demostración de la aplicación completa en funcionamiento.
